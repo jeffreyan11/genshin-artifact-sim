@@ -20,10 +20,15 @@ std::vector<std::pair<std::string, Stat>> stat_parse = {
   {"er", ER},
   {"cr", CR},
   {"cd", CD},
+  {"heal", HEAL},
   {"phys", PHYS},
   {"on_ele", ON_ELE},
   {"off_ele", OFF_ELE},
-  {"heal", HEAL}
+  {"reaction", REACTION},
+  {"dmg_na", DMG_NA},
+  {"dmg_ca", DMG_CA},
+  {"dmg_skill", DMG_SKILL},
+  {"dmg_burst", DMG_BURST}
 };
 
 std::vector<std::pair<std::string, Set>> set_parse = {
@@ -144,7 +149,7 @@ void print_character(Character& c, Weapon& w) {
   std::cerr << "Energy Recharge: " << total_stats[ER] / 10.0 << "%" << std::endl;
   std::cerr << "Crit Rate: " << total_stats[CR] / 10.0 << "%" << std::endl;
   std::cerr << "Crit DMG: " << total_stats[CD] / 10.0 << "%" << std::endl;
-  std::cerr << "Total DMG%: " << total_stats[ON_ELE] / 10.0 << "%" << std::endl;
+  std::cerr << "Total DMG%: " << total_stats[ON_ELE] + total_stats[c.damage_type] / 10.0 << "%" << std::endl;
   std::cerr << std::endl;
 }
 
@@ -193,7 +198,7 @@ void print_character(Character& c, Weapon& w, Artifact* artifacts) {
   std::cerr << "Energy Recharge: " << total_stats[ER] / 10.0 << "%" << std::endl;
   std::cerr << "Crit Rate: " << total_stats[CR] / 10.0 << "%" << std::endl;
   std::cerr << "Crit DMG: " << total_stats[CD] / 10.0 << "%" << std::endl;
-  std::cerr << "Total DMG%: " << total_stats[ON_ELE] / 10.0 << "%" << std::endl;
+  std::cerr << "Total DMG%: " << (total_stats[ON_ELE] + total_stats[c.damage_type]) / 10.0 << "%" << std::endl;
 
   std::cerr << "From artifacts:" << std::endl;
   std::cerr << " ATK: " << total_atk - c.base_atk - w.base_atk << std::endl;
@@ -255,14 +260,26 @@ std::string print_stat(Stat s) {
       return "Crit Rate%";
     case CD:
       return "Crit Dmg%";
+    case HEAL:
+      return "Healing Bonus";
     case PHYS:
       return "Phys%";
     case ON_ELE:
       return "Element% (correct element)";
     case OFF_ELE:
       return "Element% (wrong element)";
-    case HEAL:
-      return "Healing Bonus";
+    case REACTION:
+      return "Reaction Bonus";
+    case DMG_NONE:
+      return "Dmg% (none)";
+    case DMG_NA:
+      return "Dmg% (Normal Attack)";
+    case DMG_CA:
+      return "Dmg% (Charged Attack)";
+    case DMG_SKILL:
+      return "Dmg% (Skill)";
+    case DMG_BURST:
+      return "Dmg% (Burst)";
   }
   return "Unknown stat";
 }
@@ -313,12 +330,26 @@ bool read_character_config(std::string filename, Character* c) {
 
     std::vector<std::string> kv_pair = split(line, '=');
     const std::string& key = kv_pair[0];
+    const std::string& value = kv_pair[1];
+
     if (key == "base_atk") {
-      c->base_atk = std::stoi(kv_pair[1]);
+      c->base_atk = std::stoi(value);
     } else if (key == "reaction_multiplier_x10") {
-      c->reaction_multiplier_x10 = std::stoi(kv_pair[1]);
+      c->reaction_multiplier_x10 = std::stoi(value);
     } else if (key == "reaction_percentage") {
-      c->reaction_percentage = std::stoi(kv_pair[1]);
+      c->reaction_percentage = std::stoi(value);
+    } else if (key == "damage_type") {
+      auto it = std::find_if(
+          stat_parse.begin(), stat_parse.end(),
+          [&value](const std::pair<std::string, Stat>& p) {
+            return p.first == value;
+          });
+      if (it != stat_parse.end() && Character::valid_damage_type(it->second)) {
+        c->damage_type = it->second;
+      } else {
+        std::cerr << "Invalid damage type " << value << std::endl;
+        return false;
+      }
     } else {
       auto it = std::find_if(
           stat_parse.begin(), stat_parse.end(),
@@ -326,9 +357,9 @@ bool read_character_config(std::string filename, Character* c) {
             return p.first == key;
           });
       if (it != stat_parse.end()) {
-        c->stats[it->second] = std::stoi(kv_pair[1]);
+        c->stats[it->second] = std::stoi(value);
       } else {
-        std::cerr << "Unknown key " << kv_pair[0] << std::endl;
+        std::cerr << "Unknown key " << key << std::endl;
         return false;
       }
     }
@@ -348,8 +379,10 @@ bool read_weapon_config(std::string filename, Weapon* w) {
 
     std::vector<std::string> kv_pair = split(line, '=');
     const std::string& key = kv_pair[0];
+    const std::string& value = kv_pair[1];
+
     if (key == "base_atk") {
-      w->base_atk = std::stoi(kv_pair[1]);
+      w->base_atk = std::stoi(value);
     } else {
       auto it = std::find_if(
           stat_parse.begin(), stat_parse.end(),
@@ -357,9 +390,9 @@ bool read_weapon_config(std::string filename, Weapon* w) {
             return p.first == key;
           });
       if (it != stat_parse.end()) {
-        w->stats[it->second] = std::stoi(kv_pair[1]);
+        w->stats[it->second] = std::stoi(value);
       } else {
-        std::cerr << "Unknown key " << kv_pair[0] << std::endl;
+        std::cerr << "Unknown key " << key << std::endl;
         return false;
       }
     }

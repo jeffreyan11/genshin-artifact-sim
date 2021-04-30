@@ -64,10 +64,10 @@ void gen_random(Artifact* arti, FarmingConfig& fcfg) {
   int slot = slot_dist(rng);
 
   // Roll main stat
-  std::uniform_int_distribution<int> mainstat_dist(0, MAINSTAT_WEIGHT[slot][STAT_CT-1]-1);
+  std::uniform_int_distribution<int> mainstat_dist(0, MAINSTAT_WEIGHT[slot][MAINSTAT_CT-1]-1);
   int mainstat_roll = mainstat_dist(rng);
   int mainstat = HP;
-  while (mainstat < STAT_CT) {
+  while (mainstat < MAINSTAT_CT) {
     if (mainstat_roll < MAINSTAT_WEIGHT[slot][mainstat]) break;
     mainstat++;
   }

@@ -10,9 +10,13 @@ enum Slot {
 constexpr int SLOT_CT = 5;
 
 enum Stat {
-  HP = 0, ATK, DEF, HPP, ATKP, DEFP, EM, ER, CR, CD, PHYS, ON_ELE, OFF_ELE, HEAL
+  // Possible mainstats: 14
+  HP = 0, ATK, DEF, HPP, ATKP, DEFP, EM, ER, CR, CD, HEAL, PHYS, ON_ELE, OFF_ELE,
+  // Other damage types: 6
+  REACTION, DMG_NONE, DMG_NA, DMG_CA, DMG_SKILL, DMG_BURST
 };
-constexpr int STAT_CT = 14;
+constexpr int MAINSTAT_CT = 14;
+constexpr int STAT_CT = 20;
 
 enum Set {
   NONE = 0,
@@ -40,9 +44,9 @@ enum Domain {
 constexpr int DOMAIN_CT = 8;
 
 // Cumulative probability tables for rolling each type of main stat.
-extern const int MAINSTAT_WEIGHT[SLOT_CT][STAT_CT];
+extern const int MAINSTAT_WEIGHT[SLOT_CT][MAINSTAT_CT];
 // The amount of each main stat given by a +20 5*.
-extern const int MAINSTAT_LEVEL[STAT_CT];
+extern const int MAINSTAT_LEVEL[MAINSTAT_CT];
 
 constexpr int SUBSTAT_CT = 10;
 constexpr int SUBSTAT_WEIGHT_TOTAL = 44;
@@ -95,7 +99,13 @@ struct Character {
   int base_atk;
   int reaction_multiplier_x10;
   int reaction_percentage;
+  // Damage type to optimize for. Should be NONE, NA, CA, SKILL, or BURST.
+  Stat damage_type;
   int stats[STAT_CT];
+
+  static bool valid_damage_type(Stat s) {
+    return (s == DMG_NONE) || (s == DMG_NA) || (s == DMG_CA) || (s == DMG_SKILL) || (s == DMG_BURST);
+  }
 };
 
 struct Weapon {
@@ -110,7 +120,7 @@ struct FarmingConfig {
   unsigned int domain_idx;
 
   // stat_score contains the score assigned for each roll of a stat if it is present
-  int stat_score[STAT_CT];
+  int stat_score[MAINSTAT_CT];
   // The max value present in stat_score. This controls heuristics for finding the artifact set with highest damage.
   int stat_score_max;
   // The number of substat rolls that a correct mainstat is worth. Usually 6-8 is a good estimate.

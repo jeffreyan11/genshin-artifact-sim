@@ -22,7 +22,7 @@ int calc_damage(Character& c, Weapon& w, int* artifact_stats, int* set_count) {
     total_stats[i] = c.stats[i] + w.stats[i];
 
   // Artifact stats
-  for (int i = 0; i < STAT_CT; i++) {
+  for (int i = 0; i < MAINSTAT_CT; i++) {
     total_stats[i] += artifact_stats[i];
   }
 
@@ -43,10 +43,11 @@ int calc_damage(Character& c, Weapon& w, int* artifact_stats, int* set_count) {
   // Calculate using ints instead of floats, average error < 0.01%
   int base_atk = c.base_atk + w.base_atk;
   int64_t total_atk = base_atk * (1000 + total_stats[ATKP]) / 1000 + total_stats[ATK];
+  int64_t total_dmg_bonus = total_stats[ON_ELE] + total_stats[c.damage_type];
   // Denominator: 10^6 from CR * CD, 10^3 from DMG%
-  int64_t reactionless_dmg = total_atk * (1000000 + total_stats[CR] * total_stats[CD]) * (1000 + total_stats[ON_ELE]) / 1000000000;
+  int64_t reactionless_dmg = total_atk * (1000000 + total_stats[CR] * total_stats[CD]) * (1000 + total_dmg_bonus) / 1000000000;
   // Reaction bonus multiplier (1 + reaction bonus %)
-  int64_t reaction_bonus = 100 + 278 * total_stats[EM] / (1400 + total_stats[EM]);
+  int64_t reaction_bonus = 100 + 278 * total_stats[EM] / (1400 + total_stats[EM]) + total_stats[REACTION];
   int64_t unreacted_fraction = 1000 * reactionless_dmg * (100-c.reaction_percentage);
   int64_t reacted_fraction = reactionless_dmg * c.reaction_percentage * c.reaction_multiplier_x10 * reaction_bonus;
   // Denominator: 10^2 from reaction bonus, 10^2 from reaction percentage, 10 from reaction multiplier
@@ -107,8 +108,8 @@ FarmedSet farm(Character& character, Weapon& weapon, FarmingConfig& farming_conf
 
   // Step 3: Brute force the set that gives the most damage by checking all possibilities
   // Track the total stats gained from artifacts as we go
-  int artifact_stats[STAT_CT];
-  for (int i = 0; i < STAT_CT; i++)
+  int artifact_stats[MAINSTAT_CT];
+  for (int i = 0; i < MAINSTAT_CT; i++)
     artifact_stats[i] = 0;
   int set_count[SET_CT];
   for (int i = 0; i < SET_CT; i++)

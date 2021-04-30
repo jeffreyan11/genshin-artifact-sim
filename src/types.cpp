@@ -5,20 +5,21 @@
 
 // Stat roll distributions taken from https://genshin-impact.fandom.com/wiki/Artifacts/Stat_Roll_Distribution
 // Original data source: https://github.com/Dimbreath/GenshinData
-const int MAINSTAT_WEIGHT[SLOT_CT][STAT_CT] = {
+const int MAINSTAT_WEIGHT[SLOT_CT][MAINSTAT_CT] = {
   {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
   {0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
   {0, 0, 0, 80, 160, 240, 270, 300, 300, 300, 300, 300, 300, 300},
-  {0, 0, 0, 85, 170, 250, 260, 260, 260, 260, 280, 300, 400, 400},
-  {0, 0, 0, 22, 44, 66, 70, 70, 80, 90, 90, 90, 90, 100}
+  {0, 0, 0, 85, 170, 250, 260, 260, 260, 260, 260, 280, 300, 400},
+  {0, 0, 0, 22, 44, 66, 70, 70, 80, 90, 100, 100, 100, 100}
 };
 
-const int MAINSTAT_LEVEL[STAT_CT] = {
+const int MAINSTAT_LEVEL[MAINSTAT_CT] = {
   4780, 311, 0,
   466, 466, 583,
   187, 518,
   311, 622,
-  583, 466, 466, 359
+  359,
+  583, 466, 466
 };
 
 const int SUBSTAT_WEIGHT[SUBSTAT_CT] = {
@@ -51,7 +52,7 @@ StatBonus set_effect(Set s, int pieces) {
       case WANDERERS:
         break;
       case NOBLESSE:
-        sb.stats[ON_ELE] = 200;
+        sb.stats[DMG_BURST] = 200;
         break;
       case BLOODSTAINED:
         sb.stats[PHYS] = 250;
