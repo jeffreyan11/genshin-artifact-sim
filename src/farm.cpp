@@ -75,13 +75,13 @@ FarmedSet farm(Character& character, Weapon& weapon, FarmingConfig& farming_conf
 
   // Step 1: Generate n artifacts
   Artifact* all_artis = get_artifact_storage(n);
-  int fully_upgraded = 0;
   for (int i = 0; i < n; i++) {
     gen_random(all_artis + i, farming_config);
+    max_set.upgrade_ratio[all_artis[i].slot][1]++;
     // Only upgrade if satisfying basic quality constraints
     if (farming_config.upgradeable(all_artis[i])) {
       upgrade_full(all_artis + i);
-      fully_upgraded++;
+      max_set.upgrade_ratio[all_artis[i].slot][0]++;
     }
     all_artis[i].stat_score = farming_config.score(all_artis[i]);
   }
@@ -89,8 +89,6 @@ FarmedSet farm(Character& character, Weapon& weapon, FarmingConfig& farming_conf
   std::sort(all_artis, all_artis+n, [](Artifact& a, Artifact& b) {
     return a.stat_score > b.stat_score;
   });
-  max_set.upgrade_ratio[0] = fully_upgraded;
-  max_set.upgrade_ratio[1] = n;
 
   // Step 2: Categorize artifacts by slot
   int size[SLOT_CT] = {0, 0, 0, 0, 0};

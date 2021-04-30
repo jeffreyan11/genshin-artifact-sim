@@ -91,10 +91,12 @@ void print_statistics(FarmedSet* all_max_sets, int size) {
   stddev = sqrt(stddev / size);
 
   // Calculate % of artifacts upgraded
-  int64_t total_upgrade_ratio[2] = {0, 0};
+  int64_t total_upgrade_ratio[SLOT_CT][2] = {{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}};
   for (int i = 0; i < size; i++) {
-    total_upgrade_ratio[0] += all_max_sets[i].upgrade_ratio[0];
-    total_upgrade_ratio[1] += all_max_sets[i].upgrade_ratio[1];
+    for (int j = 0; j < SLOT_CT; j++) {
+      total_upgrade_ratio[j][0] += all_max_sets[i].upgrade_ratio[j][0];
+      total_upgrade_ratio[j][1] += all_max_sets[i].upgrade_ratio[j][1];
+    }
   }
 
   // Calculate set bonus distribution
@@ -110,7 +112,11 @@ void print_statistics(FarmedSet* all_max_sets, int size) {
   std::cerr << "median: " << all_max_sets[size/2].damage << std::endl;
   std::cerr << "75%ile: " << all_max_sets[3*size/4].damage << std::endl;
   std::cerr << "95%ile: " << all_max_sets[19*size/20].damage << std::endl;
-  std::cerr << "Upgrade ratio: " << print_percentage(total_upgrade_ratio[0], total_upgrade_ratio[1]) << "%" << std::endl;
+  std::cerr << "Upgrade ratio: ";
+  for (int i = 0; i < SLOT_CT; i++) {
+    std::cerr << print_percentage(total_upgrade_ratio[i][0], total_upgrade_ratio[i][1]) << "% ";
+  }
+  std::cerr << std::endl;
   std::cerr << "Set bonuses: 0pc " << print_percentage(set_bonus_cts[0], size)
             << "% | 2pc " << print_percentage(set_bonus_cts[1], size)
             << "% | 2pc + 2pc " << print_percentage(set_bonus_cts[2], size)

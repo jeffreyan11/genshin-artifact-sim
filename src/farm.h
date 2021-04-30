@@ -6,9 +6,14 @@
 struct FarmedSet {
   Artifact artifacts[SLOT_CT];
   int damage;
-  int upgrade_ratio[2];
+  int upgrade_ratio[SLOT_CT][2];
 
-  FarmedSet() : damage(0), upgrade_ratio{0, 0} {}
+  FarmedSet() : damage(0) {
+    for (int i = 0; i < SLOT_CT; i++) {
+      upgrade_ratio[i][0] = 0;
+      upgrade_ratio[i][1] = 0;
+    }
+  }
   FarmedSet(const FarmedSet& other) = default;
   FarmedSet& operator=(const FarmedSet& other) = default;
   ~FarmedSet() = default;

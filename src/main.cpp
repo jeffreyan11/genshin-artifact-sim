@@ -94,7 +94,11 @@ int main(/*int argc, char** argv*/) {
       } else {
         std::cerr << "No set with suitable mainstats found" << std::endl;
       }
-      std::cerr << "Upgrade ratio: " << print_percentage(max_set.upgrade_ratio[0], max_set.upgrade_ratio[1]) << "%" << std::endl;
+      std::cerr << "Upgrade ratio: ";
+      for (int i = 0; i < SLOT_CT; i++) {
+        std::cerr << print_percentage(max_set.upgrade_ratio[i][0], max_set.upgrade_ratio[i][1]) << "% ";
+      }
+      std::cerr << std::endl;
       std::cerr << "Damage achieved: " << max_set.damage << std::endl;
       std::cerr << std::endl;
       continue;
@@ -139,8 +143,10 @@ int main(/*int argc, char** argv*/) {
         // Calculate % of artifacts upgraded
         int64_t total_upgrade_ratio[2] = {0, 0};
         for (int i = 0; i < iters; i++) {
-          total_upgrade_ratio[0] += all_max_sets[i].upgrade_ratio[0];
-          total_upgrade_ratio[1] += all_max_sets[i].upgrade_ratio[1];
+          for (int j = 0; j < SLOT_CT; j++) {
+            total_upgrade_ratio[0] += all_max_sets[i].upgrade_ratio[j][0];
+            total_upgrade_ratio[1] += all_max_sets[i].upgrade_ratio[j][1];
+          }
         }
 
         output_file << n << ","
