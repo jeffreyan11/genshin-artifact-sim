@@ -61,12 +61,6 @@ constexpr int EXTRA_SUBSTAT_PROB = 5;
 // Stat bonuses from set effects.
 struct StatBonus {
   int stats[STAT_CT];
-
-  StatBonus() {
-    for (int i = 0; i < STAT_CT; i++) {
-      stats[i] = 0;
-    }
-  }
 };
 
 constexpr int TWO_PC = 0, FOUR_PC = 1;

@@ -41,74 +41,51 @@ const int SUBSTAT_LEVEL[SUBSTAT_CT][4] = {
   {54, 62, 70, 78}       // CD
 };
 
-// TODO: properly implement all set effects, as well as separate damage types.
+// TODO: add conditions for set effects such as 4CW and 4BS.
 StatBonus set_effect(Set s, int pieces) {
-  StatBonus sb;
-  if (pieces == TWO_PC) {
-    switch (s) {
-      case NONE:
-        break;
-      case GLADIATORS:
-      case WANDERERS:
-        break;
-      case NOBLESSE:
-        sb.stats[DMG_BURST] = 200;
-        break;
-      case BLOODSTAINED:
-        sb.stats[PHYS] = 250;
-        break;
-      case MAIDENS:
-      case VIRIDESCENT:
-      case BOLIDE:
-      case PETRA:
-      case CRIMSON_WITCH:
-      case LAVAWALKER:
-      case HEART_OF_DEPTH:
-      case BLIZZARD:
-        break;
-      case THUNDERING_FURY:
-        sb.stats[ON_ELE] = 150;
-        break;
-      case THUNDERSOOTHER:
-        // No damage effect
-        break;
-      case MILLELITH:
-      case PALE_FLAME:
-        break;
+  static const StatBonus SET_BONUSES[2][SET_CT] = {
+    {  // 2 piece set bonuses
+    //   HP,  ATK,  DEF,  HPP, ATKP, DEFP,   EM,   ER,   CR,   CD, HEAL, PHYS,ON_ELE,OFF_ELE,RXN, NONE,   NA,   CA,SKILL,BURST
+    {{    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0}},  // none
+    {{    0,    0,    0,    0,  180,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0}},  // gladiators
+    {{    0,    0,    0,    0,    0,    0,   80,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0}},  // wanderers
+    {{    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,  200}},  // noblesse
+    {{    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,  250,    0,    0,    0,    0,    0,    0,    0,    0}},  // bloodstained
+    {{    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,  150,    0,    0,    0,    0,    0,    0,    0,    0,    0}},  // maidens
+    {{    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,  150,    0,    0,    0,    0,    0,    0,    0}},  // viridescent
+    {{    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0}},  // bolide
+    {{    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,  150,    0,    0,    0,    0,    0,    0,    0}},  // petra
+    {{    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,  150,    0,    0,    0,    0,    0,    0,    0}},  // crimson witch
+    {{    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0}},  // lavawalker
+    {{    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,  150,    0,    0,    0,    0,    0,    0,    0}},  // heart of depth
+    {{    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,  150,    0,    0,    0,    0,    0,    0,    0}},  // blizzard
+    {{    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,  150,    0,    0,    0,    0,    0,    0,    0}},  // thundering fury
+    {{    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0}},  // thundersoother
+    {{    0,    0,    0,  200,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0}},  // millelith
+    {{    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,  250,    0,    0,    0,    0,    0,    0,    0,    0}},  // pale flame
+    },
+    {  // 4 piece set bonuses
+    //   HP,  ATK,  DEF,  HPP, ATKP, DEFP,   EM,   ER,   CR,   CD, HEAL, PHYS,ON_ELE,OFF_ELE,RXN, NONE,   NA,   CA,SKILL,BURST
+    {{    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0}},  // none
+    {{    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,  350,    0,    0,    0}},  // gladiators
+    {{    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,  350,    0,    0}},  // wanderers
+    {{    0,    0,    0,    0,  200,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0}},  // noblesse
+    {{    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0}},  // bloodstained
+    {{    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,  200,    0,    0,    0,    0,    0,    0,    0,    0,    0}},  // maidens
+    {{    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0}},  // viridescent
+    {{    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,  400,  400,    0,    0}},  // bolide
+    {{    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0}},  // petra
+    {{    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,   75,    0,   15,    0,    0,    0,    0,    0}},  // crimson witch
+    {{    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,  350,    0,    0,    0,    0,    0,    0,    0}},  // lavawalker
+    {{    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,  300,  300,    0,    0}},  // heart of depth
+    {{    0,    0,    0,    0,    0,    0,    0,    0,   20,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0}},  // blizzard
+    {{    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0}},  // thundering fury
+    {{    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,  350,    0,    0,    0,    0,    0,    0,    0}},  // thundersoother
+    {{    0,    0,    0,    0,  200,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0}},  // millelith
+    {{    0,    0,    0,    0,  180,    0,    0,    0,    0,    0,    0,  250,    0,    0,    0,    0,    0,    0,    0,    0}},  // pale flame
     }
-  } else if (pieces == FOUR_PC) {
-    switch (s) {
-      case NONE:
-        break;
-      case GLADIATORS:
-      case WANDERERS:
-        break;
-      case NOBLESSE:
-        sb.stats[ATKP] = 200;
-        break;
-      case BLOODSTAINED:
-        // No damage effect
-        break;
-      case MAIDENS:
-      case VIRIDESCENT:
-      case BOLIDE:
-      case PETRA:
-      case CRIMSON_WITCH:
-      case LAVAWALKER:
-      case HEART_OF_DEPTH:
-      case BLIZZARD:
-        break;
-      case THUNDERING_FURY:
-        // No damage effect
-        break;
-      case THUNDERSOOTHER:
-        sb.stats[ON_ELE] = 350;
-        break;
-      case MILLELITH:
-      case PALE_FLAME:
-        break;
-    }
-  }
+  };
+  StatBonus sb = SET_BONUSES[pieces][s];
   return sb;
 }
 
