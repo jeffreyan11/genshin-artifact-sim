@@ -132,11 +132,16 @@ Artifact* get_artifact_storage(int size) {
   return artifacts;
 }
 
-bool FarmingConfig::upgradeable(Artifact& a) {
-  int subs = a.extra_substat ? 4 : 3;
-  int sub_score = mainstat_multiplier * stat_score[a.mainstat];
+int FarmingConfig::score(Artifact& a) {
+  int subs = (a.extra_substat || a.level >= 4) ? 4 : 3;
+  int score = mainstat_multiplier * stat_score[a.mainstat];
   for (int i = 0; i < subs; i++) {
-    sub_score += stat_score[a.substats[i]];
+    // Take a weighted estimate of number of good substat rolls
+    score += stat_score[a.substats[i]] * a.substat_values[a.substats[i]] / SUBSTAT_LEVEL[a.substats[i]][0];
   }
-  return sub_score >= min_stat_score[a.slot];
+  return score;
+}
+
+bool FarmingConfig::upgradeable(Artifact& a) {
+  return score(a) >= min_stat_score[a.slot];
 }

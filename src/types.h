@@ -78,6 +78,7 @@ struct Artifact {
   Stat mainstat;
   Set set;
   int level;
+  int stat_score;
   int substats[4];
   int substat_values[SUBSTAT_CT];
   bool extra_substat;
@@ -108,10 +109,13 @@ struct FarmingConfig {
   std::vector<Domain> domains;
   unsigned int domain_idx;
 
-  // stat_score contains the score assigned to each stat if it is present
+  // stat_score contains the score assigned for each roll of a stat if it is present
   int stat_score[STAT_CT];
+  // The max value present in stat_score. This controls heuristics for finding the artifact set with highest damage.
+  int stat_score_max;
+  // The number of substat rolls that a correct mainstat is worth. Usually 6-8 is a good estimate.
   int mainstat_multiplier;
-  // min_stat_score contains the minimum score necessary for an artifact to be leveled
+  // The minimum score necessary at +0 for an artifact to be leveled to +20
   int min_stat_score[SLOT_CT];
 
   Domain next_domain() {
@@ -119,6 +123,10 @@ struct FarmingConfig {
     domain_idx = (domain_idx + 1) % domains.size();
     return d;
   }
+
+  // Returns an overall stat score for the given artifact, based on number of good sub rolls
+  // calculated by weights given in the stat_score array.
+  int score(Artifact& a);
 
   // Returns whether the artifact should be leveled to +20
   bool upgradeable(Artifact& a);

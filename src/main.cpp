@@ -19,9 +19,10 @@ FarmingConfig farming_config = {
   {MIDSUMMER_COURTYARD},
   0,
   // HP, ATK, DEF, HPP, ATKP, DEFP, EM, ER, CR, CD, PHYS, ON_ELE, OFF_ELE, HEAL
-  {  0,  1,   0,   0,   3,    0,    0,  0,  4,  4,  0,    4,      0,       0},
-  2,
-  {4, 6, 6, 6, 6}
+  {  0,  3,   0,   0,   6,    0,    0,  0,  7,  7,  0,    8,      0,       0},
+  /*stat_score_max=*/8,
+  /*mainstat_multiplier=*/6,
+  {7, 25, 36, 43, 42}
 };
 
 // Initialize all configs

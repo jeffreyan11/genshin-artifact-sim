@@ -1,5 +1,6 @@
 #include "farm.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <iostream>
 
@@ -52,32 +53,6 @@ int calc_damage(Character& c, Weapon& w, int* artifact_stats, int* set_count) {
   return (int) ((unreacted_fraction + reacted_fraction) / 100000);
 }
 
-// Returns whether an artifact in given slot has an offensive mainstat.
-// TODO: Combine this with FarmingConfig
-bool is_offensive_stat(Slot E, Stat s) {
-  if (E == SANDS) {
-    return (s == ATKP) || (s == ER) || (s == EM);
-  } else if (E == GOBLET) {
-    return (s == ATKP) || (s == EM) || (s == ON_ELE) || (s == PHYS);
-  } else if (E == CIRCLET) {
-    return (s == ATKP) || (s == CR) || (s == CD) || (s == EM);
-  } else {
-    return true;
-  }
-}
-
-// Returns an approximation of a single artifact's substat quality
-// TODO: Combine this with FarmingConfig
-int offensive_substat_ct(Artifact& a) {
-  int ct = 0;
-  ct += a.substat_values[ATK] / SUBSTAT_LEVEL[ATK][0];
-  ct += 2 * a.substat_values[ATKP] / SUBSTAT_LEVEL[ATKP][0];
-  ct += a.substat_values[EM] / SUBSTAT_LEVEL[EM][0];
-  ct += 2 * a.substat_values[CR] / SUBSTAT_LEVEL[CR][0];
-  ct += 2 * a.substat_values[CD] / SUBSTAT_LEVEL[CD][0];
-  return ct / 2;
-}
-
 void add_artifact_stats(int* total_stats, Artifact& a) {
   total_stats[a.mainstat] += MAINSTAT_LEVEL[a.mainstat];
   for (int i = 0; i < SUBSTAT_CT; i++) {
@@ -107,7 +82,12 @@ FarmedSet farm(Character& character, Weapon& weapon, FarmingConfig& farming_conf
       upgrade_full(all_artis + i);
       fully_upgraded++;
     }
+    all_artis[i].stat_score = farming_config.score(all_artis[i]);
   }
+  // Sort from greatest to least score, so that the best set is found as quickly as possible
+  std::sort(all_artis, all_artis+n, [](Artifact& a, Artifact& b) {
+    return a.stat_score > b.stat_score;
+  });
   max_set.upgrade_ratio[0] = fully_upgraded;
   max_set.upgrade_ratio[1] = n;
 
@@ -120,7 +100,7 @@ FarmedSet farm(Character& character, Weapon& weapon, FarmingConfig& farming_conf
     // Do not use artifacts that aren't +20
     if (all_artis[i].level < 20) continue;
     // Do not use pieces with a useless mainstat
-    if (!is_offensive_stat(all_artis[i].slot, all_artis[i].mainstat)) continue;
+    if (all_artis[i].slot >= SANDS && farming_config.stat_score[all_artis[i].mainstat] == 0) continue;
     by_slot[all_artis[i].slot][size[all_artis[i].slot]] = all_artis[i];
     size[all_artis[i].slot]++;
   }
@@ -135,30 +115,30 @@ FarmedSet farm(Character& character, Weapon& weapon, FarmingConfig& farming_conf
     set_count[i] = 0;
 
   for (int a = 0; a < size[FLOWER]; a++) {
-    // For flowers and feathers, roughly check that they aren't garbage using # of good sub rolls
-    if (offensive_substat_ct(by_slot[FLOWER][a]) <= offensive_substat_ct(max_set.artifacts[FLOWER]) - GOOD_ROLLS_MARGIN) continue;
+    // Roughly check that the piece isn't garbage using # of good sub rolls
+    if (by_slot[FLOWER][a].stat_score <= max_set.artifacts[FLOWER].stat_score - farming_config.stat_score_max * GOOD_ROLLS_MARGIN) continue;
     // Incrementally add and subtract each artifact from total stats
     add_artifact_stats(artifact_stats, by_slot[FLOWER][a]);
     set_count[by_slot[FLOWER][a].set]++;
 
     // And repeat for all 5 slots
     for (int b = 0; b < size[FEATHER]; b++) {
-      if (offensive_substat_ct(by_slot[FEATHER][b]) <= offensive_substat_ct(max_set.artifacts[FEATHER]) - GOOD_ROLLS_MARGIN) continue;
+      if (by_slot[FEATHER][b].stat_score <= max_set.artifacts[FEATHER].stat_score - farming_config.stat_score_max * GOOD_ROLLS_MARGIN) continue;
       add_artifact_stats(artifact_stats, by_slot[FEATHER][b]);
       set_count[by_slot[FEATHER][b].set]++;
 
       for (int c = 0; c < size[SANDS]; c++) {
-        // For sands, also require the same mainstat
-        if (by_slot[SANDS][c].mainstat == max_set.artifacts[SANDS].mainstat
-         && offensive_substat_ct(by_slot[SANDS][c]) <= offensive_substat_ct(max_set.artifacts[SANDS]) - GOOD_ROLLS_MARGIN) continue;
+        if (by_slot[SANDS][c].stat_score <= max_set.artifacts[SANDS].stat_score - farming_config.stat_score_max * GOOD_ROLLS_MARGIN) continue;
         add_artifact_stats(artifact_stats, by_slot[SANDS][c]);
         set_count[by_slot[SANDS][c].set]++;
 
         for (int d = 0; d < size[GOBLET]; d++) {
+          if (by_slot[GOBLET][d].stat_score <= max_set.artifacts[GOBLET].stat_score - farming_config.stat_score_max * GOOD_ROLLS_MARGIN) continue;
           add_artifact_stats(artifact_stats, by_slot[GOBLET][d]);
           set_count[by_slot[GOBLET][d].set]++;
 
           for (int e = 0; e < size[CIRCLET]; e++) {
+            if (by_slot[CIRCLET][e].stat_score <= max_set.artifacts[CIRCLET].stat_score - farming_config.stat_score_max * GOOD_ROLLS_MARGIN) continue;
             add_artifact_stats(artifact_stats, by_slot[CIRCLET][e]);
             set_count[by_slot[CIRCLET][e].set]++;
             int curr_damage = calc_damage(character, weapon, artifact_stats, set_count);
