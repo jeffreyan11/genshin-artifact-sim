@@ -9,7 +9,7 @@
 
 // Print some statistics about a profile of damage achieved across a population.
 // Modifies damage_achieved.
-void print_statistics(FarmedSet* all_max_sets, int size);
+void print_statistics(Character& c, FarmedSet* all_max_sets, int size);
 
 // Print some basic statistics about a sample of +20 artifacts.
 void print_statistics(Artifact* sample, int size);

@@ -63,10 +63,14 @@ struct StatBonus {
   int stats[STAT_CT];
 };
 
-constexpr int TWO_PC = 0, FOUR_PC = 1;
+// Number of pieces required to form the set
+enum SetPieces {
+  TWO_PC = 0, FOUR_PC,
+  SET_PIECES_CT
+};
 // Returns the artifact set effect (2 or 4 piece). If a 4p set effect is requested,
 // the 2p set effect is not included.
-StatBonus set_effect(Set s, int pieces);
+StatBonus set_effect(Set s, SetPieces pieces);
 
 extern const Set DOMAIN_TO_SET[DOMAIN_CT][2];
 
@@ -95,6 +99,9 @@ struct Character {
   int reaction_percentage;
   // Damage type to optimize for. Should be NONE, NA, CA, SKILL, or BURST.
   Stat damage_type;
+  // target_set is true if the set is useful for this character profile.
+  // In a config file, this should be expressed as two lists of target sets.
+  bool target_sets[SET_CT][SET_PIECES_CT];
   int stats[STAT_CT];
 
   static bool valid_damage_type(Stat s) {
@@ -119,6 +126,9 @@ struct FarmingConfig {
   int stat_score_max;
   // The number of substat rolls that a correct mainstat is worth. Usually 6-8 is a good estimate.
   int mainstat_multiplier;
+  // The score that an onset piece is worth.
+  // 1-2x of stat_score_max is a good estimate, more for high value sets such as CW, BS, VV.
+  int set_bonus_value;
   // The minimum score necessary at +0 for an artifact to be leveled to +20
   int min_stat_score[SLOT_CT];
 
@@ -130,10 +140,10 @@ struct FarmingConfig {
 
   // Returns an overall stat score for the given artifact, based on number of good sub rolls
   // calculated by weights given in the stat_score array.
-  int score(Artifact& a);
+  int score(Character& c, Artifact& a);
 
   // Returns whether the artifact should be leveled to +20
-  bool upgradeable(Artifact& a);
+  bool upgradeable(Character& c, Artifact& a);
 };
 
 #endif

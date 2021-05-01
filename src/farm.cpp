@@ -28,12 +28,13 @@ int calc_damage(Character& c, Weapon& w, int* artifact_stats, int* set_count) {
 
   // Set bonuses
   for (int i = 0; i < SET_CT; i++) {
-    if (set_count[i] >= 2) {
+    // Only consider bonuses for target sets
+    if (set_count[i] >= 2 && c.target_sets[i][TWO_PC]) {
       StatBonus sb = set_effect(static_cast<Set>(i), TWO_PC);
       for (int j = 0; j < STAT_CT; j++)
         total_stats[j] += sb.stats[j];
     }
-    if (set_count[i] >= 4) {
+    if (set_count[i] >= 4 && c.target_sets[i][FOUR_PC]) {
       StatBonus sb = set_effect(static_cast<Set>(i), FOUR_PC);
       for (int j = 0; j < STAT_CT; j++)
         total_stats[j] += sb.stats[j];
@@ -79,11 +80,11 @@ FarmedSet farm(Character& character, Weapon& weapon, FarmingConfig& farming_conf
     gen_random(all_artis + i, farming_config);
     max_set.upgrade_ratio[all_artis[i].slot][1]++;
     // Only upgrade if satisfying basic quality constraints
-    if (farming_config.upgradeable(all_artis[i])) {
+    if (farming_config.upgradeable(character, all_artis[i])) {
       upgrade_full(all_artis + i);
       max_set.upgrade_ratio[all_artis[i].slot][0]++;
     }
-    all_artis[i].stat_score = farming_config.score(all_artis[i]);
+    all_artis[i].stat_score = farming_config.score(character, all_artis[i]);
   }
   // Sort from greatest to least score, so that the best set is found as quickly as possible
   std::sort(all_artis, all_artis+n, [](Artifact& a, Artifact& b) {

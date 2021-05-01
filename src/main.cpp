@@ -22,7 +22,8 @@ FarmingConfig farming_config = {
   {  0,  3,   0,   0,   6,    0,    0,  0,  7,  7,  0,    0,    8,      0},
   /*stat_score_max=*/8,
   /*mainstat_multiplier=*/6,
-  {7, 25, 36, 43, 42}
+  /*set_bonus_value=*/8,
+  {15, 33, 44, 51, 50}
 };
 
 // Initialize all configs
@@ -70,7 +71,7 @@ int main(/*int argc, char** argv*/) {
                 << std::chrono::duration_cast<std::chrono::duration<double>>(end-start).count()
                 << "s" << std::endl;
 
-      print_statistics(all_max_sets, iters);
+      print_statistics(character, all_max_sets, iters);
       delete[] all_max_sets;
       continue;
     }

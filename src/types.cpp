@@ -42,8 +42,8 @@ const int SUBSTAT_LEVEL[SUBSTAT_CT][4] = {
 };
 
 // TODO: add conditions for set effects such as 4CW and 4BS.
-StatBonus set_effect(Set s, int pieces) {
-  static const StatBonus SET_BONUSES[2][SET_CT] = {
+StatBonus set_effect(Set s, SetPieces pieces) {
+  static const StatBonus SET_BONUSES[SET_PIECES_CT][SET_CT] = {
     {  // 2 piece set bonuses
     //   HP,  ATK,  DEF,  HPP, ATKP, DEFP,   EM,   ER,   CR,   CD, HEAL, PHYS,ON_ELE,OFF_ELE,RXN, NONE,   NA,   CA,SKILL,BURST
     {{    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0}},  // none
@@ -110,9 +110,11 @@ Artifact* get_artifact_storage(int size) {
   return artifacts;
 }
 
-int FarmingConfig::score(Artifact& a) {
+int FarmingConfig::score(Character& c, Artifact& a) {
   int subs = (a.extra_substat || a.level >= 4) ? 4 : 3;
   int score = mainstat_multiplier * stat_score[a.mainstat];
+  if (c.target_sets[a.set][TWO_PC] || c.target_sets[a.set][FOUR_PC])
+    score += set_bonus_value;
   for (int i = 0; i < subs; i++) {
     // Take a weighted estimate of number of good substat rolls
     score += stat_score[a.substats[i]] * a.substat_values[a.substats[i]] / SUBSTAT_LEVEL[a.substats[i]][0];
@@ -120,6 +122,6 @@ int FarmingConfig::score(Artifact& a) {
   return score;
 }
 
-bool FarmingConfig::upgradeable(Artifact& a) {
-  return score(a) >= min_stat_score[a.slot];
+bool FarmingConfig::upgradeable(Character& c, Artifact& a) {
+  return score(c, a) >= min_stat_score[a.slot];
 }

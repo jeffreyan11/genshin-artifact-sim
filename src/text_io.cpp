@@ -41,7 +41,7 @@ std::vector<std::pair<std::string, Set>> set_parse = {
   {"Viridescent Veneerer", VIRIDESCENT},
   {"Retracing Bolide", BOLIDE},
   {"Archaic Petra", PETRA},
-  {"Crimson Witch of Flamess", CRIMSON_WITCH},
+  {"Crimson Witch of Flames", CRIMSON_WITCH},
   {"Lavawalker", LAVAWALKER},
   {"Heart of Depth", HEART_OF_DEPTH},
   {"Blizzard Strayer", BLIZZARD},
@@ -51,8 +51,7 @@ std::vector<std::pair<std::string, Set>> set_parse = {
   {"Pale Flame", PALE_FLAME}
 };
 
-// TODO: only include target sets
-int get_set_bonuses(FarmedSet& s) {
+int get_set_bonuses(Character& c, FarmedSet& s) {
   int set_count[SET_CT];
   for (int i = 0; i < SET_CT; i++)
     set_count[i] = 0;
@@ -61,10 +60,11 @@ int get_set_bonuses(FarmedSet& s) {
 
   int two_pc = 0, four_pc = 0;
   for (int i = 0; i < SET_CT; i++) {
-    if (set_count[i] >= 4) {
+    // Only consider bonuses for target sets
+    if (set_count[i] >= 4 && c.target_sets[i][FOUR_PC]) {
       four_pc = 1;
       break;
-    } else if (set_count[i] >= 2) {
+    } else if (set_count[i] >= 2 && c.target_sets[i][TWO_PC]) {
       two_pc++;
     }
   }
@@ -73,7 +73,7 @@ int get_set_bonuses(FarmedSet& s) {
 
 }  // namespace
 
-void print_statistics(FarmedSet* all_max_sets, int size) {
+void print_statistics(Character& c, FarmedSet* all_max_sets, int size) {
   // Sort to easily find quantiles
   std::sort(all_max_sets, all_max_sets + size, [](FarmedSet& s1, FarmedSet& s2) {
     return s1.damage < s2.damage;
@@ -102,7 +102,7 @@ void print_statistics(FarmedSet* all_max_sets, int size) {
   // Calculate set bonus distribution
   int set_bonus_cts[4] = {0, 0, 0, 0};
   for (int i = 0; i < size; i++) {
-    set_bonus_cts[get_set_bonuses(all_max_sets[i])]++;
+    set_bonus_cts[get_set_bonuses(c, all_max_sets[i])]++;
   }
 
   std::cerr << "Mean damage: " << mean << std::endl;
@@ -181,13 +181,14 @@ void print_character(Character& c, Weapon& w, Artifact* artifacts) {
   // Set bonuses
   std::string set_str = "";
   for (int i = 0; i < SET_CT; i++) {
-    if (set_count[i] >= 2) {
+    // Only consider bonuses for target sets
+    if (set_count[i] >= 2 && c.target_sets[i][TWO_PC]) {
       set_str += "2 " + print_set(static_cast<Set>(i)) + " ";
       StatBonus sb = set_effect(static_cast<Set>(i), TWO_PC);
       for (int j = 0; j < STAT_CT; j++)
         total_stats[j] += sb.stats[j];
     }
-    if (set_count[i] >= 4) {
+    if (set_count[i] >= 4 && c.target_sets[i][FOUR_PC]) {
       set_str = "4 " + print_set(static_cast<Set>(i));
       StatBonus sb = set_effect(static_cast<Set>(i), FOUR_PC);
       for (int j = 0; j < STAT_CT; j++)
@@ -355,6 +356,24 @@ bool read_character_config(std::string filename, Character* c) {
       } else {
         std::cerr << "Invalid damage type " << value << std::endl;
         return false;
+      }
+    } else if (key == "target_sets_2pc" || key == "target_sets_4pc") {
+      const auto set_list = split(value, ',');
+      for (const auto& set_str : set_list) {
+        auto it = std::find_if(
+            set_parse.begin(), set_parse.end(),
+            [&set_str](const std::pair<std::string, Set>& p) {
+              return p.first == set_str;
+            });
+        if (it != set_parse.end()) {
+          if (key == "target_sets_2pc")
+            c->target_sets[it->second][TWO_PC] = true;
+          else
+            c->target_sets[it->second][FOUR_PC] = true;
+        } else {
+          std::cerr << "Invalid set " << set_str << std::endl;
+          return false;
+        }
       }
     } else {
       auto it = std::find_if(
