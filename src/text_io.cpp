@@ -326,8 +326,8 @@ std::vector<std::string> split(const std::string &s, char d) {
     return v;
 }
 
-bool read_character_config(std::string filename, Character* c) {
-  std::ifstream config("config/characters/" + filename + ".cfg");
+bool read_main_config(MainConfig* mcfg) {
+  std::ifstream config("config/main.cfg");
   if (!config.is_open()) return false;
 
   std::string line;
@@ -336,6 +336,45 @@ bool read_character_config(std::string filename, Character* c) {
     if (line[0] == '#') continue;
 
     std::vector<std::string> kv_pair = split(line, '=');
+    // Ignore invalid lines
+    if (kv_pair.size() < 2) {
+      std::cerr << "Warning: invalid line " << line << std::endl;
+      continue;
+    };
+    const std::string& key = kv_pair[0];
+    const std::string& value = kv_pair[1];
+
+    if (key == "character") {
+      mcfg->character = value;
+    } else if (key == "weapon") {
+      mcfg->weapon = value;
+    } else {
+      std::cerr << "Unknown key " << key << std::endl;
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool read_character_config(std::string filename, Character* c) {
+  std::ifstream config("config/characters/" + filename + ".cfg");
+  if (!config.is_open()) return false;
+
+  // Clear character config
+  *c = {};
+
+  std::string line;
+  while (getline(config, line)) {
+    // Ignore comment lines
+    if (line[0] == '#') continue;
+
+    std::vector<std::string> kv_pair = split(line, '=');
+    // Ignore invalid lines
+    if (kv_pair.size() < 2) {
+      std::cerr << "Warning: invalid line " << line << std::endl;
+      continue;
+    };
     const std::string& key = kv_pair[0];
     const std::string& value = kv_pair[1];
 
@@ -397,12 +436,20 @@ bool read_weapon_config(std::string filename, Weapon* w) {
   std::ifstream config("config/weapons/" + filename + ".cfg");
   if (!config.is_open()) return false;
 
+  // Clear weapon config
+  *w = {};
+
   std::string line;
   while (getline(config, line)) {
     // Ignore comment lines
     if (line[0] == '#') continue;
 
     std::vector<std::string> kv_pair = split(line, '=');
+    // Ignore invalid lines
+    if (kv_pair.size() < 2) {
+      std::cerr << "Warning: invalid line " << line << std::endl;
+      continue;
+    };
     const std::string& key = kv_pair[0];
     const std::string& value = kv_pair[1];
 

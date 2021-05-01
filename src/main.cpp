@@ -13,6 +13,7 @@
 
 namespace {
 
+MainConfig main_config;
 Character character = {};
 Weapon weapon = {};
 FarmingConfig farming_config = {
@@ -28,11 +29,11 @@ FarmingConfig farming_config = {
 
 // Initialize all configs
 bool initialize_configs() {
-  if (!read_character_config("keqing_80+", &character)) {
+  if (!read_character_config(main_config.character, &character)) {
     std::cerr << "Error reading character config." << std::endl;
     return false;
   }
-  if (!read_weapon_config("black_sword_r1", &weapon)) {
+  if (!read_weapon_config(main_config.weapon, &weapon)) {
     std::cerr << "Error reading weapon config." << std::endl;
     return false;
   }
@@ -44,6 +45,10 @@ bool initialize_configs() {
 int main(/*int argc, char** argv*/) {
   std::cerr << "Genshin Artifact Simulator" << std::endl;
 
+  if (!read_main_config(&main_config)) {
+    std::cerr << "Error reading main config." << std::endl;
+    return 1;
+  }
   if (!initialize_configs()) {
     std::cerr << "Exiting program." << std::endl;
     return 1;
@@ -204,6 +209,37 @@ int main(/*int argc, char** argv*/) {
       continue;
     }
 
+    if (input_list[0] == "set") {
+      std::string cfg_type = input_list[1];
+      std::string filename = input_list[2];
+      if (cfg_type == "character") {
+        std::string old_character = main_config.character;
+        main_config.character = filename;
+        if(!initialize_configs()) {
+          main_config.character = old_character;
+          std::cerr << "Invalid character config given." << std::endl;
+        }
+      } else if (cfg_type == "weapon") {
+        std::string old_weapon = main_config.weapon;
+        main_config.weapon = filename;
+        if(!initialize_configs()) {
+          main_config.weapon = old_weapon;
+          std::cerr << "Invalid weapon config given." << std::endl;
+        }
+      } else {
+        std::cerr << "Invalid config_type given." << std::endl;
+      }
+      std::cerr << std::endl;
+      continue;
+    }
+
+    if (input_list[0] == "settings") {
+      std::cerr << "Current configs used: " << std::endl;
+      std::cerr << "Character: " << main_config.character << std::endl;
+      std::cerr << "Weapon: " << main_config.weapon << std::endl << std::endl;
+      continue;
+    }
+
     if (input_list[0] == "help") {
       std::cerr << "Commands:" << std::endl;
       std::cerr << "farm <iters> <n_artifacts>" << std::endl;
@@ -221,6 +257,10 @@ int main(/*int argc, char** argv*/) {
       std::cerr << "  Roll one artifact and print it. For fun or debugging." << std::endl;
       std::cerr << "seed" << std::endl;
       std::cerr << "  Seed the RNG using current system time." << std::endl;
+      std::cerr << "set <config_type> <value>" << std::endl;
+      std::cerr << "  Change the character or weapon config to <value>." << std::endl;
+      std::cerr << "settings" << std::endl;
+      std::cerr << "  List current config settings." << std::endl;
       std::cerr << "quit" << std::endl;
       std::cerr << "  Exits the program." << std::endl;
       std::cerr << std::endl;

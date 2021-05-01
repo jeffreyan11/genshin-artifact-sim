@@ -1,6 +1,7 @@
 #ifndef __TYPES_H__
 #define __TYPES_H__
 
+#include <string>
 #include <vector>
 
 // Define all artifact probability constants.
@@ -144,6 +145,12 @@ struct FarmingConfig {
 
   // Returns whether the artifact should be leveled to +20
   bool upgradeable(Character& c, Artifact& a);
+};
+
+// Stores a list of all other configs used
+struct MainConfig {
+  std::string character;
+  std::string weapon;
 };
 
 #endif

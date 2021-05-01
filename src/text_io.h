@@ -31,6 +31,8 @@ double print_percentage(int num, int denom);
 // Splits a string s with delimiter d.
 std::vector<std::string> split(const std::string &s, char d);
 
+// Read the main config
+bool read_main_config(MainConfig* mcfg);
 // Read a character config from relative path config/characters/<filename>.cfg
 bool read_character_config(std::string filename, Character* c);
 // Read a weapon config from relative path config/weapons/<filename>.cfg
