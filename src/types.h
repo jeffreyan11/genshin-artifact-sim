@@ -93,33 +93,15 @@ struct Artifact {
 // Get a dynamically allocated array of zero-initialized Artifacts.
 Artifact* get_artifact_storage(int size);
 
-// Stores the stats profile for a character and weapon.
-struct Character {
-  int base_atk;
-  int reaction_multiplier_x10;
-  int reaction_percentage;
-  // Damage type to optimize for. Should be NONE, NA, CA, SKILL, or BURST.
-  Stat damage_type;
-  // target_set is true if the set is useful for this character profile.
-  // In a config file, this should be expressed as two lists of target sets.
-  bool target_sets[SET_CT][SET_PIECES_CT];
-  int stats[STAT_CT];
-
-  static bool valid_damage_type(Stat s) {
-    return (s == DMG_NONE) || (s == DMG_NA) || (s == DMG_CA) || (s == DMG_SKILL) || (s == DMG_BURST);
-  }
-};
-
-struct Weapon {
-  int base_atk;
-  int stats[STAT_CT];
-};
-
 // Stores the parameters governing player behavior when farming.
 struct FarmingConfig {
   // All domains to farm in a round robin
   std::vector<Domain> domains;
   unsigned int domain_idx;
+
+  // target_set is true if the set is useful for this character profile.
+  // In a config file, this should be expressed as two lists of target sets.
+  bool target_sets[SET_CT][SET_PIECES_CT];
 
   // stat_score contains the score assigned for each roll of a stat if it is present
   int stat_score[MAINSTAT_CT];
@@ -141,10 +123,32 @@ struct FarmingConfig {
 
   // Returns an overall stat score for the given artifact, based on number of good sub rolls
   // calculated by weights given in the stat_score array.
-  int score(Character& c, Artifact& a);
+  int score(Artifact& a);
 
   // Returns whether the artifact should be leveled to +20
-  bool upgradeable(Character& c, Artifact& a);
+  bool upgradeable(Artifact& a);
+};
+
+// Stores the stats profile for a character and weapon.
+struct Character {
+  int base_atk;
+  int reaction_multiplier_x10;
+  int reaction_percentage;
+  // Damage type to optimize for. Should be NONE, NA, CA, SKILL, or BURST.
+  Stat damage_type;
+  int stats[STAT_CT];
+
+  // Farming config for this character
+  FarmingConfig farming_config;
+
+  static bool valid_damage_type(Stat s) {
+    return (s == DMG_NONE) || (s == DMG_NA) || (s == DMG_CA) || (s == DMG_SKILL) || (s == DMG_BURST);
+  }
+};
+
+struct Weapon {
+  int base_atk;
+  int stats[STAT_CT];
 };
 
 // Stores a list of all other configs used

@@ -51,6 +51,17 @@ std::vector<std::pair<std::string, Set>> set_parse = {
   {"Pale Flame", PALE_FLAME}
 };
 
+std::vector<std::pair<std::string, Domain>> domain_parse = {
+  {"Boss", BOSS},
+  {"Clear Pool and Mountain Cavern", CLEAR_POOL_AND_MOUNTAIN_CAVERN},
+  {"Valley of Remembrance", VALLEY_OF_REMEMBRANCE},
+  {"Domain of Guyun", DOMAIN_OF_GUYUN},
+  {"Hidden Palace of Zhou Formula", HIDDEN_PALACE_OF_ZHOU_FORMULA},
+  {"Peak of Vindagnyr", PEAK_OF_VINDAGNYR},
+  {"Midsummer Courtyard", MIDSUMMER_COURTYARD},
+  {"Ridge Watch", RIDGE_WATCH},
+};
+
 int get_set_bonuses(Character& c, FarmedSet& s) {
   int set_count[SET_CT];
   for (int i = 0; i < SET_CT; i++)
@@ -61,14 +72,103 @@ int get_set_bonuses(Character& c, FarmedSet& s) {
   int two_pc = 0, four_pc = 0;
   for (int i = 0; i < SET_CT; i++) {
     // Only consider bonuses for target sets
-    if (set_count[i] >= 4 && c.target_sets[i][FOUR_PC]) {
+    if (set_count[i] >= 4 && c.farming_config.target_sets[i][FOUR_PC]) {
       four_pc = 1;
       break;
-    } else if (set_count[i] >= 2 && c.target_sets[i][TWO_PC]) {
+    } else if (set_count[i] >= 2 && c.farming_config.target_sets[i][TWO_PC]) {
       two_pc++;
     }
   }
   return two_pc + 3 * four_pc;
+}
+
+bool read_farming_config(std::ifstream& config, FarmingConfig* fcfg) {
+  // Clear the farming config
+  *fcfg = {};
+
+  std::string line;
+  while (getline(config, line)) {
+    // Ignore comment lines
+    if (line[0] == '#') continue;
+    // Ignore blank lines
+    if (line.empty()) continue;
+
+    // Farming config section is over
+    if (line == "}") return true;
+
+    std::vector<std::string> kv_pair = split(line, '=');
+    // Ignore invalid lines
+    if (kv_pair.size() < 2) {
+      std::cerr << "Warning: invalid line " << line << std::endl;
+      continue;
+    };
+    const std::string& key = kv_pair[0];
+    const std::string& value = kv_pair[1];
+
+    if (key == "domains") {
+      const auto domain_list = split(value, ',');
+      for (const auto& domain_str : domain_list) {
+        auto it = std::find_if(
+            domain_parse.begin(), domain_parse.end(),
+            [&domain_str](const std::pair<std::string, Domain>& p) {
+              return p.first == domain_str;
+            });
+        if (it != domain_parse.end()) {
+          fcfg->domains.push_back(it->second);
+        } else {
+          std::cerr << "Invalid domain name " << domain_str << std::endl;
+          return false;
+        }
+      }
+    } else if (key == "target_sets_2pc" || key == "target_sets_4pc") {
+      const auto set_list = split(value, ',');
+      for (const auto& set_str : set_list) {
+        auto it = std::find_if(
+            set_parse.begin(), set_parse.end(),
+            [&set_str](const std::pair<std::string, Set>& p) {
+              return p.first == set_str;
+            });
+        if (it != set_parse.end()) {
+          if (key == "target_sets_2pc")
+            fcfg->target_sets[it->second][TWO_PC] = true;
+          else
+            fcfg->target_sets[it->second][FOUR_PC] = true;
+        } else {
+          std::cerr << "Invalid set " << set_str << std::endl;
+          return false;
+        }
+      }
+    } else if (key == "stat_score_max") {
+      fcfg->stat_score_max = std::stoi(value);
+    } else if (key == "mainstat_multiplier") {
+      fcfg->mainstat_multiplier = std::stoi(value);
+    } else if (key == "set_bonus_value") {
+      fcfg->set_bonus_value = std::stoi(value);
+    } else if (key == "min_stat_score") {
+      const auto min_score_list = split(value, ',');
+      if (min_score_list.size() < SLOT_CT) {
+        std::cerr << "Not enough values in min_stat_score list." << std::endl;
+        return false;
+      }
+      for (int i = 0; i < SLOT_CT; i++) {
+        fcfg->min_stat_score[i] = std::stoi(min_score_list[i]);
+      }
+    } else {
+      auto it = std::find_if(
+          stat_parse.begin(), stat_parse.end(),
+          [&key](const std::pair<std::string, Stat>& p) {
+            return p.first == key;
+          });
+      if (it != stat_parse.end()) {
+        fcfg->stat_score[it->second] = std::stoi(value);
+      } else {
+        std::cerr << "Unknown key " << key << std::endl;
+        return false;
+      }
+    }
+  }
+
+  return true;
 }
 
 }  // namespace
@@ -182,13 +282,13 @@ void print_character(Character& c, Weapon& w, Artifact* artifacts) {
   std::string set_str = "";
   for (int i = 0; i < SET_CT; i++) {
     // Only consider bonuses for target sets
-    if (set_count[i] >= 2 && c.target_sets[i][TWO_PC]) {
+    if (set_count[i] >= 2 && c.farming_config.target_sets[i][TWO_PC]) {
       set_str += "2 " + print_set(static_cast<Set>(i)) + " ";
       StatBonus sb = set_effect(static_cast<Set>(i), TWO_PC);
       for (int j = 0; j < STAT_CT; j++)
         total_stats[j] += sb.stats[j];
     }
-    if (set_count[i] >= 4 && c.target_sets[i][FOUR_PC]) {
+    if (set_count[i] >= 4 && c.farming_config.target_sets[i][FOUR_PC]) {
       set_str = "4 " + print_set(static_cast<Set>(i));
       StatBonus sb = set_effect(static_cast<Set>(i), FOUR_PC);
       for (int j = 0; j < STAT_CT; j++)
@@ -334,6 +434,8 @@ bool read_main_config(MainConfig* mcfg) {
   while (getline(config, line)) {
     // Ignore comment lines
     if (line[0] == '#') continue;
+    // Ignore blank lines
+    if (line.empty()) continue;
 
     std::vector<std::string> kv_pair = split(line, '=');
     // Ignore invalid lines
@@ -368,6 +470,14 @@ bool read_character_config(std::string filename, Character* c) {
   while (getline(config, line)) {
     // Ignore comment lines
     if (line[0] == '#') continue;
+    // Ignore blank lines
+    if (line.empty()) continue;
+
+    if (line == "farming_config {") {
+      bool result = read_farming_config(config, &c->farming_config);
+      if (!result) return false;
+      continue;
+    }
 
     std::vector<std::string> kv_pair = split(line, '=');
     // Ignore invalid lines
@@ -395,24 +505,6 @@ bool read_character_config(std::string filename, Character* c) {
       } else {
         std::cerr << "Invalid damage type " << value << std::endl;
         return false;
-      }
-    } else if (key == "target_sets_2pc" || key == "target_sets_4pc") {
-      const auto set_list = split(value, ',');
-      for (const auto& set_str : set_list) {
-        auto it = std::find_if(
-            set_parse.begin(), set_parse.end(),
-            [&set_str](const std::pair<std::string, Set>& p) {
-              return p.first == set_str;
-            });
-        if (it != set_parse.end()) {
-          if (key == "target_sets_2pc")
-            c->target_sets[it->second][TWO_PC] = true;
-          else
-            c->target_sets[it->second][FOUR_PC] = true;
-        } else {
-          std::cerr << "Invalid set " << set_str << std::endl;
-          return false;
-        }
       }
     } else {
       auto it = std::find_if(
@@ -443,6 +535,8 @@ bool read_weapon_config(std::string filename, Weapon* w) {
   while (getline(config, line)) {
     // Ignore comment lines
     if (line[0] == '#') continue;
+    // Ignore blank lines
+    if (line.empty()) continue;
 
     std::vector<std::string> kv_pair = split(line, '=');
     // Ignore invalid lines

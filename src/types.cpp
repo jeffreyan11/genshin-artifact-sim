@@ -78,7 +78,7 @@ StatBonus set_effect(Set s, SetPieces pieces) {
     {{    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,   75,    0,   15,    0,    0,    0,    0,    0}},  // crimson witch
     {{    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,  350,    0,    0,    0,    0,    0,    0,    0}},  // lavawalker
     {{    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,  300,  300,    0,    0}},  // heart of depth
-    {{    0,    0,    0,    0,    0,    0,    0,    0,   20,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0}},  // blizzard
+    {{    0,    0,    0,    0,    0,    0,    0,    0,  400,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0}},  // blizzard
     {{    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0}},  // thundering fury
     {{    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,  350,    0,    0,    0,    0,    0,    0,    0}},  // thundersoother
     {{    0,    0,    0,    0,  200,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0}},  // millelith
@@ -110,10 +110,10 @@ Artifact* get_artifact_storage(int size) {
   return artifacts;
 }
 
-int FarmingConfig::score(Character& c, Artifact& a) {
+int FarmingConfig::score(Artifact& a) {
   int subs = (a.extra_substat || a.level >= 4) ? 4 : 3;
   int score = mainstat_multiplier * stat_score[a.mainstat];
-  if (c.target_sets[a.set][TWO_PC] || c.target_sets[a.set][FOUR_PC])
+  if (target_sets[a.set][TWO_PC] || target_sets[a.set][FOUR_PC])
     score += set_bonus_value;
   for (int i = 0; i < subs; i++) {
     // Take a weighted estimate of number of good substat rolls
@@ -122,6 +122,6 @@ int FarmingConfig::score(Character& c, Artifact& a) {
   return score;
 }
 
-bool FarmingConfig::upgradeable(Character& c, Artifact& a) {
-  return score(c, a) >= min_stat_score[a.slot];
+bool FarmingConfig::upgradeable(Artifact& a) {
+  return score(a) >= min_stat_score[a.slot];
 }

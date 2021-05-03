@@ -21,6 +21,6 @@ struct FarmedSet {
 
 // Farm n artifacts for given character and weapon and return the damage modifier achieved.
 // If no offensive mainstat is achieved for any slot, the optimizer will return 0 damage.
-FarmedSet farm(Character& character, Weapon& weapon, FarmingConfig& farming_config, int n);
+FarmedSet farm(Character& character, Weapon& weapon, int n);
 
 #endif

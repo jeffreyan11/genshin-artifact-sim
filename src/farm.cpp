@@ -29,12 +29,12 @@ int calc_damage(Character& c, Weapon& w, int* artifact_stats, int* set_count) {
   // Set bonuses
   for (int i = 0; i < SET_CT; i++) {
     // Only consider bonuses for target sets
-    if (set_count[i] >= 2 && c.target_sets[i][TWO_PC]) {
+    if (set_count[i] >= 2 && c.farming_config.target_sets[i][TWO_PC]) {
       StatBonus sb = set_effect(static_cast<Set>(i), TWO_PC);
       for (int j = 0; j < STAT_CT; j++)
         total_stats[j] += sb.stats[j];
     }
-    if (set_count[i] >= 4 && c.target_sets[i][FOUR_PC]) {
+    if (set_count[i] >= 4 && c.farming_config.target_sets[i][FOUR_PC]) {
       StatBonus sb = set_effect(static_cast<Set>(i), FOUR_PC);
       for (int j = 0; j < STAT_CT; j++)
         total_stats[j] += sb.stats[j];
@@ -46,7 +46,7 @@ int calc_damage(Character& c, Weapon& w, int* artifact_stats, int* set_count) {
   int64_t total_atk = base_atk * (1000 + total_stats[ATKP]) / 1000 + total_stats[ATK];
   int64_t total_dmg_bonus = total_stats[ON_ELE] + total_stats[c.damage_type];
   // Denominator: 10^6 from CR * CD, 10^3 from DMG%
-  int64_t reactionless_dmg = total_atk * (1000000 + total_stats[CR] * total_stats[CD]) * (1000 + total_dmg_bonus) / 1000000000;
+  int64_t reactionless_dmg = total_atk * (1000000 + std::min(1000, total_stats[CR]) * total_stats[CD]) * (1000 + total_dmg_bonus) / 1000000000;
   // Reaction bonus multiplier (1 + reaction bonus %)
   int64_t reaction_bonus = 100 + 278 * total_stats[EM] / (1400 + total_stats[EM]) + total_stats[REACTION];
   int64_t unreacted_fraction = 1000 * reactionless_dmg * (100-c.reaction_percentage);
@@ -71,7 +71,8 @@ void subtract_artifact_stats(int* total_stats, Artifact& a) {
 
 }  // namespace
 
-FarmedSet farm(Character& character, Weapon& weapon, FarmingConfig& farming_config, int n) {
+FarmedSet farm(Character& character, Weapon& weapon, int n) {
+  FarmingConfig& farming_config = character.farming_config;
   FarmedSet max_set;
 
   // Step 1: Generate n artifacts
@@ -80,11 +81,11 @@ FarmedSet farm(Character& character, Weapon& weapon, FarmingConfig& farming_conf
     gen_random(all_artis + i, farming_config);
     max_set.upgrade_ratio[all_artis[i].slot][1]++;
     // Only upgrade if satisfying basic quality constraints
-    if (farming_config.upgradeable(character, all_artis[i])) {
+    if (farming_config.upgradeable(all_artis[i])) {
       upgrade_full(all_artis + i);
       max_set.upgrade_ratio[all_artis[i].slot][0]++;
     }
-    all_artis[i].stat_score = farming_config.score(character, all_artis[i]);
+    all_artis[i].stat_score = farming_config.score(all_artis[i]);
   }
   // Sort from greatest to least score, so that the best set is found as quickly as possible
   std::sort(all_artis, all_artis+n, [](Artifact& a, Artifact& b) {

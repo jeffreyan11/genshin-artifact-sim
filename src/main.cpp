@@ -16,16 +16,6 @@ namespace {
 MainConfig main_config;
 Character character = {};
 Weapon weapon = {};
-FarmingConfig farming_config = {
-  {MIDSUMMER_COURTYARD},
-  0,
-  // HP, ATK, DEF, HPP, ATKP, DEFP, EM, ER, CR, CD, HEAL, PHYS, ON_ELE, OFF_ELE
-  {  0,  3,   0,   0,   6,    0,    0,  0,  7,  7,  0,    0,    8,      0},
-  /*stat_score_max=*/8,
-  /*mainstat_multiplier=*/6,
-  /*set_bonus_value=*/8,
-  {15, 33, 44, 51, 50}
-};
 
 // Initialize all configs
 bool initialize_configs() {
@@ -68,7 +58,7 @@ int main(/*int argc, char** argv*/) {
 
       FarmedSet* all_max_sets = new FarmedSet[iters];
       for (int i = 0; i < iters; i++) {
-        all_max_sets[i] = farm(character, weapon, farming_config, artifacts_to_farm);
+        all_max_sets[i] = farm(character, weapon, artifacts_to_farm);
       }
 
       auto end = std::chrono::high_resolution_clock::now();
@@ -86,7 +76,7 @@ int main(/*int argc, char** argv*/) {
 
       auto start = std::chrono::high_resolution_clock::now();
 
-      FarmedSet max_set = farm(character, weapon, farming_config, artifacts_to_farm);
+      FarmedSet max_set = farm(character, weapon, artifacts_to_farm);
 
       auto end = std::chrono::high_resolution_clock::now();
       std::cerr << "Time: "
@@ -127,7 +117,7 @@ int main(/*int argc, char** argv*/) {
       for (int n = start_n; n <= stop_n; n += step) {
         std::cerr << "Farming " << n << " artifacts " << iters << " times..." << std::endl;
         for (int i = 0; i < iters; i++) {
-          all_max_sets[i] = farm(character, weapon, farming_config, n);
+          all_max_sets[i] = farm(character, weapon, n);
         }
 
         // Sort to easily find quantiles
@@ -179,7 +169,7 @@ int main(/*int argc, char** argv*/) {
 
       Artifact* all_artis = get_artifact_storage(iters);
       for (int i = 0; i < iters; i++) {
-        gen_random(all_artis + i, farming_config);
+        gen_random(all_artis + i, character.farming_config);
         upgrade_full(all_artis + i);
       }
 
@@ -195,7 +185,7 @@ int main(/*int argc, char** argv*/) {
 
     if (input_list[0] == "roll_one") {
       Artifact arti;
-      gen_random(&arti, farming_config);
+      gen_random(&arti, character.farming_config);
       upgrade_full(&arti);
       print_artifact(&arti);
       std::cerr << std::endl;
