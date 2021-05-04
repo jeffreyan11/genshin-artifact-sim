@@ -57,15 +57,15 @@ int calc_damage(Character& c, Weapon& w, int* artifact_stats, int* set_count) {
 
 void add_artifact_stats(int* total_stats, Artifact& a) {
   total_stats[a.mainstat] += MAINSTAT_LEVEL[a.mainstat];
-  for (int i = 0; i < SUBSTAT_CT; i++) {
-    total_stats[i] += a.substat_values[i];
+  for (int i = 0; i < 4; i++) {
+    total_stats[a.substats[i]] += a.substat_values[a.substats[i]];
   }
 }
 
 void subtract_artifact_stats(int* total_stats, Artifact& a) {
   total_stats[a.mainstat] -= MAINSTAT_LEVEL[a.mainstat];
-  for (int i = 0; i < SUBSTAT_CT; i++) {
-    total_stats[i] -= a.substat_values[i];
+  for (int i = 0; i < 4; i++) {
+    total_stats[a.substats[i]] -= a.substat_values[a.substats[i]];
   }
 }
 
