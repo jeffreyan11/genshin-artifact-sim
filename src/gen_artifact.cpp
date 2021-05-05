@@ -78,12 +78,13 @@ void gen_random(Artifact* arti, FarmingConfig& fcfg) {
 
   // Roll set
   std::uniform_int_distribution<int> set_dist(0, 1);
-  arti->set = DOMAIN_TO_SET[fcfg.next_domain()][set_dist(rng)];
+  const Domain domain_to_farm = fcfg.next_domain();
+  arti->set = DOMAIN_TO_SET[domain_to_farm][set_dist(rng)];
 
   arti->level = 0;
 
   // Roll substats
-  std::uniform_int_distribution<int> starting_sub_dist(0, EXTRA_SUBSTAT_PROB-1);
+  std::uniform_int_distribution<int> starting_sub_dist(0, EXTRA_SUBSTAT_PROB[domain_to_farm == BOSS]-1);
   int starting_substats = (starting_sub_dist(rng) == 0) ? 4 : 3;
   arti->extra_substat = (starting_substats == 4);
   for (int i = 0; i < starting_substats; i++) {

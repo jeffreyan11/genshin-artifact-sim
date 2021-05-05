@@ -190,6 +190,26 @@ void print_statistics(Character& c, FarmedSet* all_max_sets, int size) {
   }
   stddev = sqrt(stddev / size);
 
+  // Count average number of good substat rolls
+  int num_substat_rolls[SUBSTAT_CT];
+  for (int i = 0; i < SUBSTAT_CT; i++)
+    num_substat_rolls[i] = 0;
+  for (int i = 0; i < size; i++) {
+    // Skip incomplete sets and count them as 0 rolls
+    if (all_max_sets[i].damage == 0) continue;
+    for (int j = 0; j < SLOT_CT; j++) {
+      Artifact& a = all_max_sets[i].artifacts[j];
+      for (int k = 0; k < 4; k++) {
+        num_substat_rolls[a.substats[k]] += a.substat_values[a.substats[k]] / SUBSTAT_LEVEL[a.substats[k]][0];
+      }
+    }
+  }
+  int total_good_rolls = num_substat_rolls[ATKP] + num_substat_rolls[CR] + num_substat_rolls[CD];
+  // Add EM to good rolls if used by character
+  if (c.farming_config.stat_score[EM] > 0) {
+    total_good_rolls += num_substat_rolls[EM];
+  }
+
   // Calculate % of artifacts upgraded
   int64_t total_upgrade_ratio[SLOT_CT][2] = {{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}};
   for (int i = 0; i < size; i++) {
@@ -212,6 +232,10 @@ void print_statistics(Character& c, FarmedSet* all_max_sets, int size) {
   std::cerr << "median: " << all_max_sets[size/2].damage << std::endl;
   std::cerr << "75%ile: " << all_max_sets[3*size/4].damage << std::endl;
   std::cerr << "95%ile: " << all_max_sets[19*size/20].damage << std::endl;
+  std::cerr << "Avg number of ATK%, CR, CD, (EM) rolls: "
+            << round(100.0 * total_good_rolls / size) / 100.0 << std::endl;
+  std::cerr << "Avg number of crit rolls: "
+            << round(100.0 * (num_substat_rolls[CR] + num_substat_rolls[CD]) / size) / 100.0 << std::endl;
   std::cerr << "Upgrade ratio: ";
   for (int i = 0; i < SLOT_CT; i++) {
     std::cerr << print_percentage(total_upgrade_ratio[i][0], total_upgrade_ratio[i][1]) << "% ";

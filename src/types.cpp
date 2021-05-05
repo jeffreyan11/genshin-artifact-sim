@@ -41,6 +41,8 @@ const int SUBSTAT_LEVEL[SUBSTAT_CT][4] = {
   {54, 62, 70, 78}       // CD
 };
 
+const int EXTRA_SUBSTAT_PROB[2] = {5, 3};
+
 // TODO: add conditions for set effects such as 4CW and 4BS.
 StatBonus set_effect(Set s, SetPieces pieces) {
   static const StatBonus SET_BONUSES[SET_PIECES_CT][SET_CT] = {

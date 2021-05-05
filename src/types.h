@@ -56,8 +56,8 @@ extern const int SUBSTAT_WEIGHT[SUBSTAT_CT];
 // The amount of each substat given per level up.
 extern const int SUBSTAT_LEVEL[SUBSTAT_CT][4];
 
-// 1/5 chance of starting with 4 substats
-constexpr int EXTRA_SUBSTAT_PROB = 5;
+// 1/5 chance of starting with 4 substats, 1/3 for boss drops
+extern const int EXTRA_SUBSTAT_PROB[2];
 
 // Stat bonuses from set effects.
 struct StatBonus {

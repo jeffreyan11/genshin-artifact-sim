@@ -111,7 +111,7 @@ int main(/*int argc, char** argv*/) {
         std::cerr << "Error: failed to open output file for writing." << std::endl;
         continue;
       }
-      output_file << "Artifacts farmed,Mean,Stddev,5%ile,25%ile,Median,75%ile,95%ile,Upgrade ratio" << std::endl;
+      output_file << "Artifacts,Mean,Stddev,5%ile,25%ile,Median,75%ile,95%ile,Good Rolls,Crit Rolls,Upgrade ratio" << std::endl;
 
       FarmedSet* all_max_sets = new FarmedSet[iters];
       for (int n = start_n; n <= stop_n; n += step) {
@@ -136,6 +136,26 @@ int main(/*int argc, char** argv*/) {
         }
         stddev = sqrt(stddev / iters);
 
+        // Count average number of good substat rolls
+        int num_substat_rolls[SUBSTAT_CT];
+        for (int i = 0; i < SUBSTAT_CT; i++)
+          num_substat_rolls[i] = 0;
+        for (int i = 0; i < iters; i++) {
+          // Skip incomplete sets and count them as 0 rolls
+          if (all_max_sets[i].damage == 0) continue;
+          for (int j = 0; j < SLOT_CT; j++) {
+            Artifact& a = all_max_sets[i].artifacts[j];
+            for (int k = 0; k < 4; k++) {
+              num_substat_rolls[a.substats[k]] += a.substat_values[a.substats[k]] / SUBSTAT_LEVEL[a.substats[k]][0];
+            }
+          }
+        }
+        int total_good_rolls = num_substat_rolls[ATKP] + num_substat_rolls[CR] + num_substat_rolls[CD];
+        // Add EM to good rolls if used by character
+        if (character.farming_config.stat_score[EM] > 0) {
+          total_good_rolls += num_substat_rolls[EM];
+        }
+
         // Calculate % of artifacts upgraded
         int64_t total_upgrade_ratio[2] = {0, 0};
         for (int i = 0; i < iters; i++) {
@@ -153,6 +173,8 @@ int main(/*int argc, char** argv*/) {
                     << all_max_sets[iters/2].damage << ","
                     << all_max_sets[3*iters/4].damage << ","
                     << all_max_sets[19*iters/20].damage << ","
+                    << round(100.0 * total_good_rolls / iters) / 100.0 << ","
+                    << round(100.0 * (num_substat_rolls[CR] + num_substat_rolls[CD]) / iters) / 100.0 << ","
                     << print_percentage(total_upgrade_ratio[0], total_upgrade_ratio[1]) << "%" << std::endl;
       }
       std::cerr << "Done." << std::endl;
