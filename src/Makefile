@@ -1,6 +1,6 @@
 CC      = g++
 CFLAGS  = -Wall -g -Wextra -Wcast-qual -Wshadow -ansi -pedantic -std=c++11 -O3
-OBJS    = main.o farm.o gen_artifact.o text_io.o types.o
+OBJS    = main.o analyze.o farm.o gen_artifact.o text_io.o types.o
 EXE     = sim
 
 all: sim

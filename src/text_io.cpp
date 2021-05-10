@@ -7,6 +7,8 @@
 #include <sstream>
 #include <utility>
 
+#include "analyze.h"
+
 namespace {
 
 std::vector<std::pair<std::string, Stat>> stat_parse = {
@@ -61,26 +63,6 @@ std::vector<std::pair<std::string, Domain>> domain_parse = {
   {"Midsummer Courtyard", MIDSUMMER_COURTYARD},
   {"Ridge Watch", RIDGE_WATCH},
 };
-
-int get_set_bonuses(Character& c, FarmedSet& s) {
-  int set_count[SET_CT];
-  for (int i = 0; i < SET_CT; i++)
-    set_count[i] = 0;
-  for (int i = 0; i < SLOT_CT; i++)
-    set_count[s.artifacts[i].set]++;
-
-  int two_pc = 0, four_pc = 0;
-  for (int i = 0; i < SET_CT; i++) {
-    // Only consider bonuses for target sets
-    if (set_count[i] >= 4 && c.farming_config.target_sets[i][FOUR_PC]) {
-      four_pc = 1;
-      break;
-    } else if (set_count[i] >= 2 && c.farming_config.target_sets[i][TWO_PC]) {
-      two_pc++;
-    }
-  }
-  return two_pc + 3 * four_pc;
-}
 
 bool read_farming_config(std::ifstream& config, FarmingConfig* fcfg) {
   // Clear the farming config
@@ -173,78 +155,27 @@ bool read_farming_config(std::ifstream& config, FarmingConfig* fcfg) {
 
 }  // namespace
 
-void print_statistics(Character& c, FarmedSet* all_max_sets, int size) {
-  // Sort to easily find quantiles
-  std::sort(all_max_sets, all_max_sets + size, [](FarmedSet& s1, FarmedSet& s2) {
-    return s1.damage < s2.damage;
-  });
-  // Calculate mean
-  int64_t damage_total = 0;
-  for (int i = 0; i < size; i++)
-    damage_total += all_max_sets[i].damage;
-  double mean = double(damage_total) / size;
-  // Calculate standard deviation
-  double stddev = 0.0;
-  for (int i = 0; i < size; i++) {
-    stddev += (all_max_sets[i].damage - mean) * (all_max_sets[i].damage - mean);
-  }
-  stddev = sqrt(stddev / size);
+void print_statistics(Character& c, std::vector<FarmedSet>& all_max_sets) {
+  FarmedSetStats stats = analyze_farmed_set(c, all_max_sets);
 
-  // Count average number of good substat rolls
-  int num_substat_rolls[SUBSTAT_CT];
-  for (int i = 0; i < SUBSTAT_CT; i++)
-    num_substat_rolls[i] = 0;
-  for (int i = 0; i < size; i++) {
-    // Skip incomplete sets and count them as 0 rolls
-    if (all_max_sets[i].damage == 0) continue;
-    for (int j = 0; j < SLOT_CT; j++) {
-      Artifact& a = all_max_sets[i].artifacts[j];
-      for (int k = 0; k < 4; k++) {
-        num_substat_rolls[a.substats[k]] += a.substat_values[a.substats[k]] / SUBSTAT_LEVEL[a.substats[k]][0];
-      }
-    }
-  }
-  int total_good_rolls = num_substat_rolls[ATKP] + num_substat_rolls[CR] + num_substat_rolls[CD];
-  // Add EM to good rolls if used by character
-  if (c.farming_config.stat_score[EM] > 0) {
-    total_good_rolls += num_substat_rolls[EM];
-  }
-
-  // Calculate % of artifacts upgraded
-  int64_t total_upgrade_ratio[SLOT_CT][2] = {{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}};
-  for (int i = 0; i < size; i++) {
-    for (int j = 0; j < SLOT_CT; j++) {
-      total_upgrade_ratio[j][0] += all_max_sets[i].upgrade_ratio[j][0];
-      total_upgrade_ratio[j][1] += all_max_sets[i].upgrade_ratio[j][1];
-    }
-  }
-
-  // Calculate set bonus distribution
-  int set_bonus_cts[4] = {0, 0, 0, 0};
-  for (int i = 0; i < size; i++) {
-    set_bonus_cts[get_set_bonuses(c, all_max_sets[i])]++;
-  }
-
-  std::cerr << "Mean damage: " << mean << std::endl;
-  std::cerr << "Stddev: " << stddev << std::endl;
-  std::cerr << "5%ile: " << all_max_sets[size/20].damage << std::endl;
-  std::cerr << "25%ile: " << all_max_sets[size/4].damage << std::endl;
-  std::cerr << "median: " << all_max_sets[size/2].damage << std::endl;
-  std::cerr << "75%ile: " << all_max_sets[3*size/4].damage << std::endl;
-  std::cerr << "95%ile: " << all_max_sets[19*size/20].damage << std::endl;
-  std::cerr << "Avg number of ATK%, CR, CD, (EM) rolls: "
-            << round(100.0 * total_good_rolls / size) / 100.0 << std::endl;
-  std::cerr << "Avg number of crit rolls: "
-            << round(100.0 * (num_substat_rolls[CR] + num_substat_rolls[CD]) / size) / 100.0 << std::endl;
+  std::cerr << "Mean damage: " << stats.mean << std::endl;
+  std::cerr << "Stddev: " << stats.stddev << std::endl;
+  std::cerr << "5%ile: " << stats.percentiles[5] << std::endl;
+  std::cerr << "25%ile: " << stats.percentiles[25] << std::endl;
+  std::cerr << "median: " << stats.percentiles[50] << std::endl;
+  std::cerr << "75%ile: " << stats.percentiles[75] << std::endl;
+  std::cerr << "95%ile: " << stats.percentiles[95] << std::endl;
+  std::cerr << "Avg number of good (offensive stat) rolls: " << stats.good_rolls << std::endl;
+  std::cerr << "Avg number of crit rolls: " << stats.crit_rolls << std::endl;
   std::cerr << "Upgrade ratio: ";
   for (int i = 0; i < SLOT_CT; i++) {
-    std::cerr << print_percentage(total_upgrade_ratio[i][0], total_upgrade_ratio[i][1]) << "% ";
+    std::cerr << print_percentage(stats.upgrade_ratio[i][0], stats.upgrade_ratio[i][1]) << "% ";
   }
   std::cerr << std::endl;
-  std::cerr << "Set bonuses: 0pc " << print_percentage(set_bonus_cts[0], size)
-            << "% | 2pc " << print_percentage(set_bonus_cts[1], size)
-            << "% | 2pc + 2pc " << print_percentage(set_bonus_cts[2], size)
-            << "% | 4pc " << print_percentage(set_bonus_cts[3], size) << "%" << std::endl;
+  std::cerr << "Set bonuses: 0pc " << stats.set_bonus_pcts[0]
+            << "% | 2pc " << stats.set_bonus_pcts[1]
+            << "% | 2pc + 2pc " << stats.set_bonus_pcts[2]
+            << "% | 4pc " << stats.set_bonus_pcts[3] << "%" << std::endl;
   std::cerr << std::endl;
 }
 

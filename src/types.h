@@ -88,6 +88,9 @@ struct Artifact {
 
   // Default constructor initializing all values to 0
   Artifact();
+  Artifact(const Artifact& other) = default;
+  Artifact& operator=(const Artifact& other) = default;
+  ~Artifact() = default;
 };
 
 // Get a dynamically allocated array of zero-initialized Artifacts.

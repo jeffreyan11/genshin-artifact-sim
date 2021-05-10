@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "analyze.h"
 #include "farm.h"
 #include "gen_artifact.h"
 #include "text_io.h"
@@ -56,9 +57,9 @@ int main(/*int argc, char** argv*/) {
 
       auto start = std::chrono::high_resolution_clock::now();
 
-      FarmedSet* all_max_sets = new FarmedSet[iters];
+      std::vector<FarmedSet> all_max_sets;
       for (int i = 0; i < iters; i++) {
-        all_max_sets[i] = farm(character, weapon, artifacts_to_farm);
+        all_max_sets.push_back(farm(character, weapon, artifacts_to_farm));
       }
 
       auto end = std::chrono::high_resolution_clock::now();
@@ -66,8 +67,7 @@ int main(/*int argc, char** argv*/) {
                 << std::chrono::duration_cast<std::chrono::duration<double>>(end-start).count()
                 << "s" << std::endl;
 
-      print_statistics(character, all_max_sets, iters);
-      delete[] all_max_sets;
+      print_statistics(character, all_max_sets);
       continue;
     }
 
@@ -113,74 +113,29 @@ int main(/*int argc, char** argv*/) {
       }
       output_file << "Artifacts,Mean,Stddev,5%ile,25%ile,Median,75%ile,95%ile,Good Rolls,Crit Rolls,Upgrade ratio" << std::endl;
 
-      FarmedSet* all_max_sets = new FarmedSet[iters];
       for (int n = start_n; n <= stop_n; n += step) {
         std::cerr << "Farming " << n << " artifacts " << iters << " times..." << std::endl;
+        std::vector<FarmedSet> all_max_sets;
         for (int i = 0; i < iters; i++) {
-          all_max_sets[i] = farm(character, weapon, n);
+          all_max_sets.push_back(farm(character, weapon, n));
         }
 
-        // Sort to easily find quantiles
-        std::sort(all_max_sets, all_max_sets + iters, [](FarmedSet& s1, FarmedSet& s2) {
-          return s1.damage < s2.damage;
-        });
-        // Calculate mean
-        int64_t damage_total = 0;
-        for (int i = 0; i < iters; i++)
-          damage_total += all_max_sets[i].damage;
-        double mean = double(damage_total) / iters;
-        // Calculate standard deviation
-        double stddev = 0.0;
-        for (int i = 0; i < iters; i++) {
-          stddev += (all_max_sets[i].damage - mean) * (all_max_sets[i].damage - mean);
-        }
-        stddev = sqrt(stddev / iters);
-
-        // Count average number of good substat rolls
-        int num_substat_rolls[SUBSTAT_CT];
-        for (int i = 0; i < SUBSTAT_CT; i++)
-          num_substat_rolls[i] = 0;
-        for (int i = 0; i < iters; i++) {
-          // Skip incomplete sets and count them as 0 rolls
-          if (all_max_sets[i].damage == 0) continue;
-          for (int j = 0; j < SLOT_CT; j++) {
-            Artifact& a = all_max_sets[i].artifacts[j];
-            for (int k = 0; k < 4; k++) {
-              num_substat_rolls[a.substats[k]] += a.substat_values[a.substats[k]] / SUBSTAT_LEVEL[a.substats[k]][0];
-            }
-          }
-        }
-        int total_good_rolls = num_substat_rolls[ATKP] + num_substat_rolls[CR] + num_substat_rolls[CD];
-        // Add EM to good rolls if used by character
-        if (character.farming_config.stat_score[EM] > 0) {
-          total_good_rolls += num_substat_rolls[EM];
-        }
-
-        // Calculate % of artifacts upgraded
-        int64_t total_upgrade_ratio[2] = {0, 0};
-        for (int i = 0; i < iters; i++) {
-          for (int j = 0; j < SLOT_CT; j++) {
-            total_upgrade_ratio[0] += all_max_sets[i].upgrade_ratio[j][0];
-            total_upgrade_ratio[1] += all_max_sets[i].upgrade_ratio[j][1];
-          }
-        }
-
+        FarmedSetStats stats = analyze_farmed_set(character, all_max_sets);
         output_file << n << ","
-                    << mean << ","
-                    << stddev << ","
-                    << all_max_sets[iters/20].damage << ","
-                    << all_max_sets[iters/4].damage << ","
-                    << all_max_sets[iters/2].damage << ","
-                    << all_max_sets[3*iters/4].damage << ","
-                    << all_max_sets[19*iters/20].damage << ","
-                    << round(100.0 * total_good_rolls / iters) / 100.0 << ","
-                    << round(100.0 * (num_substat_rolls[CR] + num_substat_rolls[CD]) / iters) / 100.0 << ","
-                    << print_percentage(total_upgrade_ratio[0], total_upgrade_ratio[1]) << "%" << std::endl;
+                    << stats.mean << ","
+                    << stats.stddev << ","
+                    << stats.percentiles[5] << ","
+                    << stats.percentiles[25] << ","
+                    << stats.percentiles[50] << ","
+                    << stats.percentiles[75] << ","
+                    << stats.percentiles[95] << ","
+                    << stats.good_rolls << ","
+                    << stats.crit_rolls << ","
+                    << print_percentage(stats.total_upgrade_ratio[0], stats.total_upgrade_ratio[1]) << "%" << std::endl;
       }
       std::cerr << "Done." << std::endl;
       std::cerr << std::endl;
 
-      delete[] all_max_sets;
       continue;
     }
 
