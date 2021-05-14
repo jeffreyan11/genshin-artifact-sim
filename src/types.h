@@ -118,6 +118,9 @@ struct FarmingConfig {
   // The minimum score necessary at +0 for an artifact to be leveled to +20
   int min_stat_score[SLOT_CT];
 
+  // Total ER required for the character, set to 100% if no ER is required.
+  int required_er;
+
   Domain next_domain() {
     Domain d = domains[domain_idx];
     domain_idx = (domain_idx + 1) % domains.size();

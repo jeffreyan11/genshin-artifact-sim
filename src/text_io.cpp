@@ -126,6 +126,8 @@ bool read_farming_config(std::ifstream& config, FarmingConfig* fcfg) {
       fcfg->mainstat_multiplier = std::stoi(value);
     } else if (key == "set_bonus_value") {
       fcfg->set_bonus_value = std::stoi(value);
+    } else if (key == "required_er") {
+      fcfg->required_er = std::stoi(value);
     } else if (key == "min_stat_score") {
       const auto min_score_list = split(value, ',');
       if (min_score_list.size() < SLOT_CT) {

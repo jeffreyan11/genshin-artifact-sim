@@ -142,15 +142,20 @@ FarmedSet farm(Character& character, Weapon& weapon, int n) {
             if (by_slot[CIRCLET][e].stat_score <= max_set.artifacts[CIRCLET].stat_score - farming_config.stat_score_max * GOOD_ROLLS_MARGIN) continue;
             add_artifact_stats(artifact_stats, by_slot[CIRCLET][e]);
             set_count[by_slot[CIRCLET][e].set]++;
-            int curr_damage = calc_damage(character, weapon, artifact_stats, set_count);
-            if (curr_damage > max_set.damage) {
-              max_set.damage = curr_damage;
-              max_set.artifacts[FLOWER] = by_slot[FLOWER][a];
-              max_set.artifacts[FEATHER] = by_slot[FEATHER][b];
-              max_set.artifacts[SANDS] = by_slot[SANDS][c];
-              max_set.artifacts[GOBLET] = by_slot[GOBLET][d];
-              max_set.artifacts[CIRCLET] = by_slot[CIRCLET][e];
+
+            // Check for sufficient ER
+            if (artifact_stats[ER] + character.stats[ER] + weapon.stats[ER] >= farming_config.required_er) {
+              int curr_damage = calc_damage(character, weapon, artifact_stats, set_count);
+              if (curr_damage > max_set.damage) {
+                max_set.damage = curr_damage;
+                max_set.artifacts[FLOWER] = by_slot[FLOWER][a];
+                max_set.artifacts[FEATHER] = by_slot[FEATHER][b];
+                max_set.artifacts[SANDS] = by_slot[SANDS][c];
+                max_set.artifacts[GOBLET] = by_slot[GOBLET][d];
+                max_set.artifacts[CIRCLET] = by_slot[CIRCLET][e];
+              }
             }
+
             subtract_artifact_stats(artifact_stats, by_slot[CIRCLET][e]);
             set_count[by_slot[CIRCLET][e].set]--;
           }
