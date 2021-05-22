@@ -11,7 +11,9 @@ struct FarmedSetStats {
   int percentiles[101];
 
   // Good rolls are CR, CD, ATK% (DEF%/HP% for DEF/HP scalers), EM if reaction-based
-  double good_rolls, crit_rolls;
+  double good_rolls;
+  // 2*CR + CD from substats
+  double crit_value;
 
   // % of farmed artifacts that are rolled to +20, per slot and overall
   int64_t upgrade_ratio[SLOT_CT][2];

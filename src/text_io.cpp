@@ -168,7 +168,7 @@ void print_statistics(Character& c, std::vector<FarmedSet>& all_max_sets) {
   std::cerr << "75%ile: " << stats.percentiles[75] << std::endl;
   std::cerr << "95%ile: " << stats.percentiles[95] << std::endl;
   std::cerr << "Avg number of good (offensive stat) rolls: " << stats.good_rolls << std::endl;
-  std::cerr << "Avg number of crit rolls: " << stats.crit_rolls << std::endl;
+  std::cerr << "Avg (2*CR + CD) from substats: " << stats.crit_value << std::endl;
   std::cerr << "Upgrade ratio: ";
   for (int i = 0; i < SLOT_CT; i++) {
     std::cerr << print_percentage(stats.upgrade_ratio[i][0], stats.upgrade_ratio[i][1]) << "% ";

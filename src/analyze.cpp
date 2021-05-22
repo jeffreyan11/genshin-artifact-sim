@@ -54,10 +54,11 @@ FarmedSetStats analyze_farmed_set(Character& c, std::vector<FarmedSet>& all_max_
   }
   stats.stddev = sqrt(stats.stddev / size);
 
-  // Count average number of good substat rolls
+  // Count average number of good substat rolls and crit value
   int num_substat_rolls[SUBSTAT_CT];
   for (int i = 0; i < SUBSTAT_CT; i++)
     num_substat_rolls[i] = 0;
+  int crit_value = 0;
   for (int i = 0; i < size; i++) {
     // Skip incomplete sets and count them as 0 rolls
     if (all_max_sets[i].damage == 0) continue;
@@ -66,6 +67,7 @@ FarmedSetStats analyze_farmed_set(Character& c, std::vector<FarmedSet>& all_max_
       for (int k = 0; k < 4; k++) {
         num_substat_rolls[a.substats[k]] += a.substat_values[a.substats[k]] / SUBSTAT_LEVEL[a.substats[k]][0];
       }
+      crit_value += 2 * a.substat_values[CR] + a.substat_values[CD];
     }
   }
 
@@ -79,8 +81,7 @@ FarmedSetStats analyze_farmed_set(Character& c, std::vector<FarmedSet>& all_max_
   }
   stats.good_rolls = round(100.0 * good_rolls / size) / 100.0;
 
-  int crit_rolls = num_substat_rolls[CR] + num_substat_rolls[CD];
-  stats.crit_rolls = round(100.0 * crit_rolls / size) / 100.0;
+  stats.crit_value = round(10.0 * crit_value / size) / 10.0 / 10.0;
 
   // Calculate % of artifacts upgraded
   for (int i = 0; i < size; i++) {

@@ -111,7 +111,7 @@ int main(/*int argc, char** argv*/) {
         std::cerr << "Error: failed to open output file for writing." << std::endl;
         continue;
       }
-      output_file << "Artifacts,Mean,Stddev,5%ile,25%ile,Median,75%ile,95%ile,Good Rolls,Crit Rolls,Upgrade ratio" << std::endl;
+      output_file << "Artifacts,Mean,Stddev,5%ile,25%ile,Median,75%ile,95%ile,Good Rolls,Avg(2*CR + CD),Upgrade ratio" << std::endl;
 
       for (int n = start_n; n <= stop_n; n += step) {
         std::cerr << "Farming " << n << " artifacts " << iters << " times..." << std::endl;
@@ -130,7 +130,7 @@ int main(/*int argc, char** argv*/) {
                     << stats.percentiles[75] << ","
                     << stats.percentiles[95] << ","
                     << stats.good_rolls << ","
-                    << stats.crit_rolls << ","
+                    << stats.crit_value << ","
                     << print_percentage(stats.total_upgrade_ratio[0], stats.total_upgrade_ratio[1]) << "%" << std::endl;
       }
       std::cerr << "Done." << std::endl;
