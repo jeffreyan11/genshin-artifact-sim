@@ -3,6 +3,21 @@
 #include <algorithm>
 #include <cstring>
 
+const int STAT_MULTIPLIER[STAT_CT] = {
+   1,  1,  1,  // flat stats
+  10, 10, 10,  // % stats
+  1,  // EM
+  10, // ER
+  10, // CR
+  10, // CD
+  10, // Healing bonus
+  10, // Phys %
+  10, // On-element %
+  10, // Off-element %
+  1,  // Reaction
+  10, 10, 10, 10, 10  // All damage types
+};
+
 // Stat roll distributions taken from https://genshin-impact.fandom.com/wiki/Artifacts/Stat_Roll_Distribution
 // Original data source: https://github.com/Dimbreath/GenshinData
 const int MAINSTAT_WEIGHT[SLOT_CT][MAINSTAT_CT] = {

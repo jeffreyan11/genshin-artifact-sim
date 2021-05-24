@@ -127,7 +127,7 @@ bool read_farming_config(std::ifstream& config, FarmingConfig* fcfg) {
     } else if (key == "set_bonus_value") {
       fcfg->set_bonus_value = std::stoi(value);
     } else if (key == "required_er") {
-      fcfg->required_er = std::stoi(value);
+      fcfg->required_er = (int) (10 * std::stod(value));
     } else if (key == "min_stat_score") {
       const auto min_score_list = split(value, ',');
       if (min_score_list.size() < SLOT_CT) {
@@ -447,8 +447,8 @@ bool read_character_config(std::string filename, Character* c) {
 
     if (key == "base_atk") {
       c->base_atk = std::stoi(value);
-    } else if (key == "reaction_multiplier_x10") {
-      c->reaction_multiplier_x10 = std::stoi(value);
+    } else if (key == "reaction_multiplier") {
+      c->reaction_multiplier_x10 = (int) (10 * std::stod(value));
     } else if (key == "reaction_percentage") {
       c->reaction_percentage = std::stoi(value);
     } else if (key == "damage_type") {
@@ -470,7 +470,7 @@ bool read_character_config(std::string filename, Character* c) {
             return p.first == key;
           });
       if (it != stat_parse.end()) {
-        c->stats[it->second] = std::stoi(value);
+        c->stats[it->second] = (int) (STAT_MULTIPLIER[it->second] * std::stod(value));
       } else {
         std::cerr << "Unknown key " << key << std::endl;
         return false;
@@ -513,7 +513,7 @@ bool read_weapon_config(std::string filename, Weapon* w) {
             return p.first == key;
           });
       if (it != stat_parse.end()) {
-        w->stats[it->second] = std::stoi(value);
+        w->stats[it->second] = (int) (STAT_MULTIPLIER[it->second] * std::stod(value));
       } else {
         std::cerr << "Unknown key " << key << std::endl;
         return false;

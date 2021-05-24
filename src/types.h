@@ -19,6 +19,9 @@ enum Stat {
 constexpr int MAINSTAT_CT = 14;
 constexpr int STAT_CT = 20;
 
+// Multipliers for turning decimal input values into internal integer representation.
+extern const int STAT_MULTIPLIER[STAT_CT];
+
 enum Set {
   NONE = 0,
   GLADIATORS, WANDERERS,
