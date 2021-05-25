@@ -27,6 +27,7 @@ std::vector<std::pair<std::string, Stat>> stat_parse = {
   {"on_ele", ON_ELE},
   {"off_ele", OFF_ELE},
   {"reaction", REACTION},
+  {"dmg_none", DMG_NONE},
   {"dmg_na", DMG_NA},
   {"dmg_ca", DMG_CA},
   {"dmg_skill", DMG_SKILL},
